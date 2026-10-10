@@ -1,7 +1,5 @@
-import 'package:attendly/app/startup/splash_screen.dart';
+import 'package:attendly/app/startup/startup_gate.dart';
 import 'package:attendly/app/theme/app_theme.dart';
-import 'package:attendly/data/database/database_provider.dart';
-import 'package:attendly/data/database/database_state.dart';
 import 'package:attendly/data/settings/settings_exceptions.dart';
 import 'package:attendly/features/settings/providers/settings_notifier.dart';
 import 'package:attendly/l10n/app_localizations_delegate.dart';
@@ -10,9 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final _navigatorKey = GlobalKey<NavigatorState>();
-
-/// Root widget: MaterialApp with theme, localization and the startup screen.
+/// Root widget: MaterialApp with theme, localization and the startup gate.
 class AttendlyApp extends ConsumerWidget {
   const AttendlyApp({super.key});
 
@@ -20,21 +16,9 @@ class AttendlyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
 
-    // A page reported a database error: replace the whole stack with the
-    // splash screen's error view (retry / create new).
-    ref.listen<DatabaseState>(databaseProvider, (previous, next) {
-      if (next.dbError != null && previous?.dbError == null) {
-        _navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => SplashScreen(dbError: next.dbError)),
-          (_) => false,
-        );
-      }
-    });
-
     if (settings.error != null) return _buildErrorApp(settings.error!);
 
     return MaterialApp(
-      navigatorKey: _navigatorKey,
       title: 'Attendly',
       themeMode: settings.themeMode,
       locale:    settings.locale,
@@ -50,19 +34,21 @@ class AttendlyApp extends ConsumerWidget {
       ],
       theme:     AppTheme.buildLightTheme(),
       darkTheme: AppTheme.buildDarkTheme(),
+      // One system bar style for every screen, including the startup views
+      // without an AppBar. Updated by Flutter only when it changes.
       builder: (context, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        SystemChrome.setSystemUIOverlayStyle(
-          (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(
             statusBarColor: Colors.transparent,
             systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
             systemNavigationBarIconBrightness:
                 isDark ? Brightness.light : Brightness.dark,
           ),
+          child: child!,
         );
-        return child!;
       },
-      home: const SplashScreen(),
+      home: const StartupGate(),
     );
   }
 
