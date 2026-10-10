@@ -6,6 +6,7 @@ import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/features/settings/data/test_people_seeder.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:attendly/l10n/app_localizations.dart';
@@ -326,7 +327,8 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
                 iconSize: iconSize,
                 isTablet: Responsive.of(context).isTablet,
               ),
-              if (appState.isReady) ...[
+              // Test people are for profiling only; release builds never show them.
+              if (appState.isReady && !kReleaseMode) ...[
                 Divider(
                     height: Responsive.of(context).isTablet ? 40 : 32),
                 const _TestDataSection(),
