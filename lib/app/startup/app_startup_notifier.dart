@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:attendly/app/startup/startup_decision.dart';
@@ -171,7 +170,8 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
     }
 
     // settings.json lives in the storage folder, so it can only be read now.
-    unawaited(ref.read(settingsProvider.notifier).load());
+    // Wait for it: the year-change dialog must already use the saved language.
+    await ref.read(settingsProvider.notifier).load();
     return _openDefault();
   }
 

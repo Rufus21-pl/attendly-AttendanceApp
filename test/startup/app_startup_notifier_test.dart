@@ -18,8 +18,12 @@ class _FakeSettingsService extends SettingsService {
   @override
   Future<ThemeMode> getThemeMode() async => ThemeMode.light;
 
+  /// Slower than the database checks on purpose, like a real file read.
   @override
-  Future<Locale> getLocale() async => const Locale('en');
+  Future<Locale> getLocale() async {
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    return const Locale('de');
+  }
 }
 
 void main() {
@@ -141,6 +145,13 @@ void main() {
   });
 
   group('year rollover', () {
+    test('the saved language is loaded before the year-change question', () async {
+      manager.rolloverNeeded = true;
+
+      expect(await started(), isA<StartupRolloverAvailable>());
+      expect(container.read(settingsProvider).locale, const Locale('de'));
+    });
+
     test('a year change asks about the rollover', () async {
       manager.rolloverNeeded = true;
       expect(await started(), isA<StartupRolloverAvailable>());
