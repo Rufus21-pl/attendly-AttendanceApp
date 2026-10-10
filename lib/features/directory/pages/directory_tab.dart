@@ -2,14 +2,13 @@ import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
-import 'package:attendly/features/directory/pages/add_person_page.dart';
-import 'package:attendly/features/directory/pages/edit_person_page.dart';
+import 'package:attendly/features/directory/pages/person_form_page.dart';
 import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/directory/widgets/person_directory_list.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
 import 'package:attendly/shared/shell/shell_tab.dart';
-import 'package:attendly/shared/widgets/refreshable_app_bar.dart';
+import 'package:attendly/shared/widgets/tab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -21,18 +20,9 @@ class DirectoryTab extends ShellTab {
   @override
   PreferredSizeWidget buildAppBar(BuildContext context, WidgetRef ref) {
     final isAscending = ref.watch(directorySortAscendingProvider);
-    final asyncPeople = ref.watch(filteredDirectoryProvider);
 
-    return RefreshableAppBar(
+    return TabAppBar(
       title: AppLocalizations.of(context).directory,
-      showRefresh: true,
-      isLoading: asyncPeople.isLoading ||
-                 asyncPeople.isRefreshing ||
-                 asyncPeople.isReloading,
-      onRefresh: () {
-        AppLogger.d("Directory", "Invalidating dir stream");
-        ref.invalidate(directoryStreamProvider);
-      },
       leading: DrawerMenuButton.forShell(context),
       actions: [
         IconButton(
@@ -65,11 +55,11 @@ class DirectoryTab extends ShellTab {
   Future<void> _addPerson(BuildContext context) async {
     try {
       await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => AddPersonPage(),
+        builder: (_) => const PersonFormPage(mode: PersonFormMode.add),
       ));
     } catch (e, stackTrace) {
       if (!context.mounted) return;
-      AppDialogs().showErrorMessage(context,
+      AppDialogs.showError(context,
           'An error occurred while adding a person.\n${e.toString()}',
           stackTrace: stackTrace);
     }
@@ -84,7 +74,6 @@ class _DirectoryBody extends ConsumerStatefulWidget {
 }
 
 class _DirectoryBodyState extends ConsumerState<_DirectoryBody> {
-  final AppDialogs _helper = AppDialogs();
 
   Future<void> _deletePerson(DirectoryPeopleData person) async {
     if (!mounted) return;
@@ -96,49 +85,48 @@ class _DirectoryBodyState extends ConsumerState<_DirectoryBody> {
     final count = await repo.getEntryCountForPerson(id);
     if (!mounted) return;
 
-    final shouldDelete = await _helper.displayDialog(
+    final shouldDelete = await AppDialogs.confirm(
       context,
-      localizations.deletePersonTitle(name),
-      '${localizations.areYouSureYouWantToDelete}\n\n${localizations.personHasNRecords(count)}',
-      localizations,
+      title: localizations.deletePersonTitle(name),
+      message: '${localizations.areYouSureYouWantToDelete}\n\n${localizations.personHasNRecords(count)}',
     );
 
-    if (shouldDelete != true || !mounted) return;
+    if (!shouldDelete || !mounted) return;
 
     try {
-      _helper.showLoadingDialog(context, localizations.delete);
+      AppDialogs.showLoading(context, localizations.delete);
       await repo.deletePerson(id);
 
       if (mounted) {
-        _helper.hideLoadingDialog(context);
-        await _helper.showSubmitMessage(
+        AppDialogs.hideLoading(context);
+        await AppDialogs.showSuccess(
             context, localizations.personDeletedFromDb(name, id));
       }
     } on custom_db_exceptions.DatabaseException catch (e) {
       if (!mounted) return;
-      _helper.hideLoadingDialog(context);
+      AppDialogs.hideLoading(context);
       String msg = e.toString();
       if (e is custom_db_exceptions.DatabaseOperationException) {
         msg = localizations.unexpectedErrorContactCreator;
         AppLogger.e("Directory", "Database operation failed", e, e.stackTrace);
       }
-      _helper.showErrorMessage(context, msg);
+      AppDialogs.showError(context, msg);
     } catch (e, stackTrace) {
       if (!mounted) return;
-      _helper.hideLoadingDialog(context);
-      _helper.showErrorMessage(context, e.toString(), stackTrace: stackTrace);
+      AppDialogs.hideLoading(context);
+      AppDialogs.showError(context, e.toString(), stackTrace: stackTrace);
     }
   }
 
   Future<void> _editPerson(DirectoryPeopleData person) async {
     try {
       await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => EditPersonPage(personToUpdate: person),
+        builder: (_) => PersonFormPage(mode: PersonFormMode.edit, person: person),
       ));
-      // Stream auto-updates after the repo write inside EditPersonPage.
+      // Stream auto-updates after the repo write inside PersonFormPage.
     } catch (e, stackTrace) {
       if (!mounted) return;
-      _helper.showErrorMessage(
+      AppDialogs.showError(
           context, 'Failed to update person: ${e.toString()}',
           stackTrace: stackTrace);
     }

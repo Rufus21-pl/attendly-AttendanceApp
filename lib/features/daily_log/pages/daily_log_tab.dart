@@ -1,11 +1,9 @@
-import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/daily_log/models/category_record.dart';
 import 'package:attendly/features/daily_log/models/person_with_categories.dart';
-import 'package:attendly/features/daily_log/pages/add_daily_entry_page.dart';
-import 'package:attendly/features/daily_log/pages/edit_daily_entry_page.dart';
+import 'package:attendly/features/daily_log/pages/daily_entry_form_page.dart';
 import 'package:attendly/features/daily_log/providers/daily_log_providers.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
@@ -13,7 +11,7 @@ import 'package:attendly/shared/navigation/app_routes.dart';
 import 'package:attendly/shared/options/category_label.dart';
 import 'package:attendly/shared/options/category_option.dart';
 import 'package:attendly/shared/shell/shell_tab.dart';
-import 'package:attendly/shared/widgets/refreshable_app_bar.dart';
+import 'package:attendly/shared/widgets/tab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,17 +46,8 @@ class DailyLogTab extends ShellTab {
     // Grab the list if available to check lengths
     final visiblePeople = asyncFilteredData.valueOrNull ?? [];
 
-    return RefreshableAppBar(
+    return TabAppBar(
       title: AppLocalizations.of(context).dailyLogs,
-      showRefresh: true,
-      isLoading:
-          asyncFilteredData.isLoading ||
-          asyncFilteredData.isRefreshing ||
-          asyncFilteredData.isReloading,
-      onRefresh: () {
-        AppLogger.d("Daily", "Invalidating daily stream");
-        ref.invalidate(dailyRawLogsProvider);
-      },
       leading:
           isEditMode
               ? IconButton(
@@ -115,7 +104,10 @@ class DailyLogTab extends ShellTab {
             heroTag: 'add_fab',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => AddDailyEntryPage(initialDate: ref.read(dailyDateProvider)),
+                builder: (context) => DailyEntryFormPage(
+                  mode: DailyEntryFormMode.add,
+                  initialDate: ref.read(dailyDateProvider),
+                ),
               ),
             ),
             child: Icon(
@@ -149,7 +141,6 @@ class _DailyLogBody extends ConsumerStatefulWidget {
 }
 
 class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
-  final AppDialogs _helper = AppDialogs();
 
   void _toggleSelection(PersonWithCategories person) {
     final currentSet = ref.read(dailySelectedPeopleProvider);
@@ -182,29 +173,28 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
     final localizations = AppLocalizations.of(context);
     final repo = ref.read(dailyRepositoryProvider);
 
-    final confirm = await _helper.displayDialog(
+    final confirm = await AppDialogs.confirm(
       context,
-      localizations.deleteRecord,
-      localizations.confirmDeleteCategory(
+      title: localizations.deleteRecord,
+      message: localizations.confirmDeleteCategory(
         localizedCategoryLabel(context, record.category),
         record.personName ?? localizations.unknown,
         record.date,
       ),
-      localizations,
     );
 
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       try {
-        _helper.showLoadingDialog(context, localizations.delete);
+        AppDialogs.showLoading(context, localizations.delete);
         await repo.deleteDailyEntry(record.recordId, record.personId, DateTime.parse(record.date));
         if (mounted) {
-          _helper.hideLoadingDialog(context);
-          await _helper.showSubmitMessage(context, localizations.recordDeleted);
+          AppDialogs.hideLoading(context);
+          await AppDialogs.showSuccess(context, localizations.recordDeleted);
         }
       } catch (e) {
         if (!mounted) return;
-        _helper.hideLoadingDialog(context);
-        _helper.showErrorMessage(context, e.toString());
+        AppDialogs.hideLoading(context);
+        AppDialogs.showError(context, e.toString());
       }
     }
   }
@@ -300,11 +290,10 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (ctx) => AddDailyEntryPage(
+                              (ctx) => DailyEntryFormPage(
+                                mode: DailyEntryFormMode.add,
                                 initialDate: selectedDate,
-                                preselectedPersons: [
-                                  {'id': person.personId, 'name': person.name},
-                                ],
+                                preselectedPersons: [(id: person.personId, name: person.name)],
                               ),
                         ),
                       );
@@ -313,7 +302,7 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (ctx) => EditDailyEntryPage(record: record),
+                          builder: (ctx) => DailyEntryFormPage(mode: DailyEntryFormMode.edit, record: record),
                         ),
                       );
                     },
@@ -337,17 +326,17 @@ class _EditModeActions extends ConsumerStatefulWidget {
 }
 
 class _EditModeActionsState extends ConsumerState<_EditModeActions> {
-  final AppDialogs _helper = AppDialogs();
 
   Future<void> _onBulkAddCategory() async {
     final selectedSet = ref.read(dailySelectedPeopleProvider);
     final date = ref.read(dailyDateProvider);
-    final selectedList = selectedSet.map((p) => {'id': p.personId, 'name': p.name}).toList();
+    final selectedList = [for (final p in selectedSet) (id: p.personId, name: p.name)];
 
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder:
-            (context) => AddDailyEntryPage(
+            (context) => DailyEntryFormPage(
+              mode: DailyEntryFormMode.add,
               initialDate: date,
               preselectedPersons: selectedList,
             ),
@@ -366,26 +355,25 @@ class _EditModeActionsState extends ConsumerState<_EditModeActions> {
     final date = ref.read(dailyDateProvider);
     final repo = ref.read(dailyRepositoryProvider);
 
-    final confirm = await _helper.displayDialog(
+    final confirm = await AppDialogs.confirm(
       context,
-      localizations.delete,
-      localizations.confirmBulkDelete(count),
-      localizations,
+      title: localizations.delete,
+      message: localizations.confirmBulkDelete(count),
     );
-    if (confirm != true || !mounted) return;
+    if (!confirm || !mounted) return;
 
     try {
-      _helper.showLoadingDialog(context, localizations.delete);
+      AppDialogs.showLoading(context, localizations.delete);
       final personIds = selectedSet.map((p) => p.personId).toList();
       await repo.bulkDeleteEntries(personIds, date);
       if (!mounted) return;
-      _helper.hideLoadingDialog(context);
-      await _helper.showSubmitMessage(context, localizations.peopleEntriesDeleted(count));
+      AppDialogs.hideLoading(context);
+      await AppDialogs.showSuccess(context, localizations.peopleEntriesDeleted(count));
       if (mounted) DailyLogTab._toggleEditMode(ref);
     } catch (e, stackTrace) {
       if (!mounted) return;
-      _helper.hideLoadingDialog(context);
-      _helper.showErrorMessage(context, 'Failed to delete entries: $e', stackTrace: stackTrace);
+      AppDialogs.hideLoading(context);
+      AppDialogs.showError(context, 'Failed to delete entries: $e', stackTrace: stackTrace);
     }
   }
 
