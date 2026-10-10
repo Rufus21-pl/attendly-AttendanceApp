@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:attendly/app/startup/app_startup_notifier.dart';
 import 'package:attendly/app/startup/startup_gate.dart';
 import 'package:attendly/core/permissions/storage_permission_service.dart';
 import 'package:attendly/data/database/database_provider.dart';
@@ -119,6 +122,37 @@ void main() {
     await settleStreams(tester);
 
     expect(find.text(l10n.noPersonFound), findsOneWidget);
+    await unmount(tester);
+  });
+
+  testWidgets('switching databases shows a loading screen and confirms the switch',
+      (tester) async {
+    await pumpGate(tester);
+    final notifier = ProviderScope.containerOf(tester.element(find.byType(StartupGate)))
+        .read(appStartupProvider.notifier);
+
+    notifier.openDatabaseFile(File('/storage/emulated/0/Documents/AttendlyDb/db_2025.db'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(l10n.switchingDatabase), findsOneWidget);
+    expect(find.text(l10n.noPersonFound), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    await settleStreams(tester);
+    expect(find.text(l10n.noPersonFound), findsOneWidget);
+    expect(find.text(l10n.nowViewingDatabase(2025)), findsOneWidget);
+
+    notifier.openDefault();
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(l10n.switchingDatabase), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    await settleStreams(tester);
+    // The previous snackbar is hidden first.
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text(l10n.backToCurrentDatabase(2026)), findsOneWidget);
+
     await unmount(tester);
   });
 

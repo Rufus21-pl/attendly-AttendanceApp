@@ -324,6 +324,11 @@ abstract class AppLocalizations {
   String get openAppSettings;
   String get showLogs;
 
+  // Database switch feedback
+  String get switchingDatabase;
+  String nowViewingDatabase(int year);
+  String backToCurrentDatabase(int year);
+
   // Debug menu: test data
   String get testData;
   String addTestPeople(int count);

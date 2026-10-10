@@ -6,7 +6,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /// Shown while startup is doing real work (permission check, opening the
 /// database). The native splash covers the engine start before this.
 class LoadingView extends StatefulWidget {
-  const LoadingView({super.key});
+  /// Shown under the spinner; defaults to "Initializing...".
+  final String? message;
+
+  const LoadingView({super.key, this.message});
 
   @override
   State<LoadingView> createState() => _LoadingViewState();
@@ -56,7 +59,7 @@ class _LoadingViewState extends State<LoadingView> with SingleTickerProviderStat
               child: CircularProgressIndicator(strokeWidth: isTablet ? 4.0 : 3.0),
             ),
             SizedBox(height: isTablet ? 30 : 20),
-            Text(localizations.initializing,
+            Text(widget.message ?? localizations.initializing,
                 style: TextStyle(
                     color: Colors.grey.shade600,
                     fontSize: isTablet ? 20 : 16)),

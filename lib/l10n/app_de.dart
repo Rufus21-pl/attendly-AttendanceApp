@@ -701,6 +701,15 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get showLogs => 'Protokolle anzeigen';
 
+  @override
+  String get switchingDatabase => 'Datenbank wird gewechselt...';
+
+  @override
+  String nowViewingDatabase(int year) => 'Datenbank von $year geöffnet';
+
+  @override
+  String backToCurrentDatabase(int year) => 'Zurück zur aktuellen Datenbank ($year)';
+
   // Debug menu: test data
   @override
   String get testData => 'Testdaten';

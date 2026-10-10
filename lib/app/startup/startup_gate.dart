@@ -9,6 +9,8 @@ import 'package:attendly/app/startup/views/rollover_view.dart';
 import 'package:attendly/app/startup/views/setup_view.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/features/settings/widgets/changelog_dialog.dart';
+import 'package:attendly/l10n/app_localizations.dart';
+import 'package:attendly/shared/dialogs/app_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,6 +24,10 @@ class StartupGate extends ConsumerStatefulWidget {
 }
 
 class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingObserver {
+  /// The shell was left to open another database (picker or "return to
+  /// main database"); confirmed with a snackbar once the shell is back.
+  bool _switchingDatabase = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +56,18 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
       // Leaving the shell (database switch or error): close every page and
       // dialog on top of it, so the startup screen is visible.
       Navigator.of(context).popUntil((route) => route.isFirst);
+      _switchingDatabase = next.isLoading;
+    }
+
+    // The new-year banner leads to the year-change question, which already
+    // tells the user what happens.
+    if (next.valueOrNull is StartupRolloverAvailable) _switchingDatabase = false;
+
+    if (!wasReady && isReady && _switchingDatabase) {
+      _switchingDatabase = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _confirmDatabaseSwitch();
+      });
     }
 
     if (!wasReady && isReady && !ref.read(databaseProvider).isTemporaryDb) {
@@ -57,6 +75,20 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
         if (mounted) ChangelogDialog.presentChangelogIfNew(context);
       });
     }
+  }
+
+  void _confirmDatabaseSwitch() {
+    final database = ref.read(databaseProvider);
+    final year = database.dbYear;
+    if (year == null) return;
+
+    final localizations = AppLocalizations.of(context);
+    AppDialogs.showSnack(
+      context,
+      database.isTemporaryDb
+          ? localizations.nowViewingDatabase(year)
+          : localizations.backToCurrentDatabase(year),
+    );
   }
 
   @override
@@ -81,7 +113,10 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
       StartupRolloverAvailable() => RolloverView(key: ObjectKey(value)),
       StartupRolloverFailed() => RolloverFailedView(key: ObjectKey(value), error: value.error),
       StartupMigrating() => const MigratingView(),
-      StartupReady() => const AppShell(),
+      // Still the previous value while another database is being opened.
+      StartupReady() => isBusy
+          ? LoadingView(message: AppLocalizations.of(context).switchingDatabase)
+          : const AppShell(),
       StartupFailed() => FailedView(failure: value, isBusy: isBusy),
     };
   }
