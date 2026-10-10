@@ -73,6 +73,16 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('the daily log FABs take only their own height', (tester) async {
+      await pumpShell(tester, AppTab.dailyLog);
+
+      // The Scaffold scales the FAB in from its centre; a full-height
+      // column made the buttons fly in from the middle of the screen.
+      final fabs = find.ancestor(of: find.byIcon(Icons.add), matching: find.byType(Column)).first;
+      expect(tester.getSize(fabs).height, lessThan(300));
+      await unmount(tester);
+    });
+
     testWidgets('a tablet shows the rail next to the tab', (tester) async {
       await pumpShell(tester, AppTab.directory, tablet: true);
 

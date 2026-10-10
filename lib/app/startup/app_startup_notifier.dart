@@ -18,6 +18,10 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
   /// glitch, so it stays visible at least this long.
   static const Duration _minimumMigrationDuration = Duration(seconds: 1);
 
+  /// Switching databases from the app often takes only a few milliseconds.
+  /// The loading screen stays at least this long so the switch is visible.
+  static const Duration _minimumSwitchDuration = Duration(milliseconds: 800);
+
   DateTime? _migrationStartedAt;
 
   /// Startup actions run one at a time. Coming back from the Android 11+
@@ -138,24 +142,26 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
   /// first-launch checks again.
   Future<void> openDefault() => _serialized(() async {
     AppLogger.i(_tag, 'Opening the default database');
-    state = const AsyncLoading();
-    await _closeQuietly();
-    state = AsyncData(await _openDefault());
+    await _switchDatabase(() async {
+      await _closeQuietly();
+      return _openDefault();
+    });
   });
 
   /// Switches to a database picked in the database list.
   Future<void> openDatabaseFile(File file) => _serialized(() async {
     AppLogger.i(_tag, 'Startup: switching to selected database ${file.path}');
-    state = const AsyncLoading();
-    try {
-      await _database.closeDatabase();
-      await _database.openDatabase(file: file, onMigrationStarted: _onMigrationStarted);
-      state = AsyncData(await _ready());
-    } catch (e, stackTrace) {
-      AppLogger.e(_tag, 'Opening ${file.path} failed, showing error screen', e, stackTrace);
-      _migrationStartedAt = null;
-      state = AsyncData(StartupFailed(e, selectedDb: file));
-    }
+    await _switchDatabase(() async {
+      try {
+        await _database.closeDatabase();
+        await _database.openDatabase(file: file, onMigrationStarted: _onMigrationStarted);
+        return await _ready();
+      } catch (e, stackTrace) {
+        AppLogger.e(_tag, 'Opening ${file.path} failed, showing error screen', e, stackTrace);
+        _migrationStartedAt = null;
+        return StartupFailed(e, selectedDb: file);
+      }
+    });
   });
 
   // ── Internals ─────────────────────────────────────────────────────────────
@@ -193,6 +199,21 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
       _migrationStartedAt = null;
       return StartupFailed(e);
     }
+  }
+
+  /// Shows the loading screen while [open] runs. Coming from the shell, the
+  /// screen stays for [_minimumSwitchDuration] so the user sees the switch.
+  Future<void> _switchDatabase(Future<StartupState> Function() open) async {
+    final fromShell = state.valueOrNull is StartupReady;
+    final startedAt = DateTime.now();
+    state = const AsyncLoading();
+
+    final next = await open();
+    if (fromShell) {
+      final remaining = _minimumSwitchDuration - DateTime.now().difference(startedAt);
+      if (remaining > Duration.zero) await Future.delayed(remaining);
+    }
+    state = AsyncData(next);
   }
 
   Future<void> _onMigrationStarted() async {

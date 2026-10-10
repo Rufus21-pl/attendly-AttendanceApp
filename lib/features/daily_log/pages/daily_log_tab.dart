@@ -81,8 +81,10 @@ class DailyLogTab extends ShellTab {
     if (ref.watch(dailyEditModeProvider)) return null;
     final responsive = Responsive.of(context);
 
+    // mainAxisSize.min: the Scaffold scales the FAB in from its centre, and a
+    // full-height column made both buttons fly in from the middle of the screen.
     return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
           width: responsive.buttonHeight + 10,

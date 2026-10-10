@@ -708,6 +708,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get showLogs => 'Show logs';
 
+  @override
+  String get switchingDatabase => 'Switching database...';
+
+  @override
+  String nowViewingDatabase(int year) => 'Now viewing the database of $year';
+
+  @override
+  String backToCurrentDatabase(int year) => 'Back to the current database ($year)';
+
   // Debug menu: test data
   @override
   String get testData => 'Test data';
