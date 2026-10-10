@@ -54,13 +54,11 @@ class AlphabetIndexBar extends StatefulWidget {
   final Set<String> availableLetters;
   final void Function(String letter, {required bool isDragging}) onLetterSelected;
   final List<String> letters;
-  final bool isTablet;
 
   const AlphabetIndexBar({
     super.key,
     required this.availableLetters,
     required this.onLetterSelected,
-    this.isTablet = false,
     this.letters = const [
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
       'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#',
@@ -169,9 +167,9 @@ class _AlphabetIndexBarState extends State<AlphabetIndexBar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final isTablet = ResponsiveUtils.isTablet(context);
+    final isTablet = Responsive.of(context).isTablet;
 
-    // Responsive dimensions driven by ResponsiveUtils
+    // Responsive dimensions driven by Responsive
     final barWidth = isTablet ? 38.0 : 24.0;
     final normalFontSize = isTablet ? 16.0 : 11.0;
     final activeFontSize = isTablet ? 20.0 : 14.0;

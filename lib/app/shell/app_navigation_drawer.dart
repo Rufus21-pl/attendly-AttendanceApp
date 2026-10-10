@@ -5,23 +5,23 @@ import 'package:attendly/data/database/database_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:attendly/features/settings/pages/settings_page.dart';
+import 'package:attendly/app/shell/app_tab.dart';
 import 'package:attendly/app/startup/app_startup_notifier.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AppNavigationDrawer extends ConsumerWidget {
-  final int selectedTab;
-  final Function(int) onTabChange;
-  final bool isTablet;
+  /// The tablet rail instead of the drawer.
   final bool isRailMode;
 
   const AppNavigationDrawer({
     super.key,
-    required this.selectedTab,
-    required this.onTabChange,
-    this.isTablet = false,
     this.isRailMode = false,
   });
+
+  void _selectTab(WidgetRef ref, AppTab tab) {
+    ref.read(selectedTabProvider.notifier).state = tab;
+  }
 
   /// Runs the default startup again: the new-year banner leads to the
   /// rollover question, "return to main database" leaves a picked database.
@@ -33,7 +33,7 @@ class AppNavigationDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (isRailMode && isTablet) {
+    if (isRailMode) {
       return _buildNavigationRail(context, ref);
     } else {
       return _buildDrawer(context, ref);
@@ -44,15 +44,15 @@ class AppNavigationDrawer extends ConsumerWidget {
     final appState = ref.watch(databaseProvider);
     final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final iconSize = ResponsiveUtils.getIconSize(context, baseSize: 32);
+    final iconSize = Responsive.of(context).iconSize(baseSize: 32);
 
-    final int? validSelectedIndex = (selectedTab >= 0 && selectedTab <= 3) ? selectedTab : null;
+    final selectedTab = ref.watch(selectedTabProvider);
 
     return NavigationRail(
       extended: false,
       minWidth: 72,
-      selectedIndex: validSelectedIndex,
-      onDestinationSelected: onTabChange,
+      selectedIndex: selectedTab.index,
+      onDestinationSelected: (index) => _selectTab(ref, AppTab.values[index]),
       labelType: NavigationRailLabelType.none,
       backgroundColor: theme.scaffoldBackgroundColor,
       leading: Column(
@@ -149,7 +149,6 @@ class AppNavigationDrawer extends ConsumerWidget {
                     MaterialPageRoute(
                       builder: (_) => DatabasePickerPage(
                         currentDbPath: appState.currentDbPath,
-                        isTablet: isTablet,
                       ),
                     ),
                   );
@@ -167,14 +166,16 @@ class AppNavigationDrawer extends ConsumerWidget {
   }
 
   Widget _buildDrawer(BuildContext context, WidgetRef ref) {
+    final selectedTab = ref.watch(selectedTabProvider);
     final appState = ref.watch(databaseProvider);
     final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final dbPath = appState.currentDbPath ?? localizations.noDatabaseOpen;
     final dbName = p.basename(dbPath);
     
-    final iconScale = ResponsiveUtils.getIconScaleFactor(context);
+    final iconScale = Responsive.of(context).iconScaleFactor;
 
+    final isTablet = Responsive.of(context).isTablet;
     final textScale = isTablet ? 0.9 : 1.0;
 
     return Drawer(
@@ -194,9 +195,9 @@ class AppNavigationDrawer extends ConsumerWidget {
                     theme: theme,
                     icon: Icons.people_outline,
                     text: localizations.directory,
-                    isSelected: selectedTab == 0,
+                    isSelected: selectedTab == AppTab.directory,
                     onTap: () {
-                      onTabChange(0);
+                      _selectTab(ref, AppTab.directory);
                       Navigator.pop(context);
                     },
                     iconScale: iconScale,
@@ -207,9 +208,9 @@ class AppNavigationDrawer extends ConsumerWidget {
                     theme: theme,
                     icon: Icons.calendar_today_outlined,
                     text: localizations.dailyLogs,
-                    isSelected: selectedTab == 1,
+                    isSelected: selectedTab == AppTab.dailyLog,
                     onTap: () {
-                      onTabChange(1);
+                      _selectTab(ref, AppTab.dailyLog);
                       Navigator.pop(context);
                     },
                     iconScale: iconScale,
@@ -220,9 +221,9 @@ class AppNavigationDrawer extends ConsumerWidget {
                     theme: theme,
                     icon: Icons.view_week_outlined,
                     text: localizations.weeklyReport,
-                    isSelected: selectedTab == 2,
+                    isSelected: selectedTab == AppTab.weeklyReport,
                     onTap: () {
-                      onTabChange(2);
+                      _selectTab(ref, AppTab.weeklyReport);
                       Navigator.pop(context);
                     },
                     iconScale: iconScale,
@@ -233,9 +234,9 @@ class AppNavigationDrawer extends ConsumerWidget {
                     theme: theme,
                     icon: Icons.bar_chart_outlined,
                     text: localizations.yearStats,
-                    isSelected: selectedTab == 3,
+                    isSelected: selectedTab == AppTab.yearlyReport,
                     onTap: () {
-                      onTabChange(3);
+                      _selectTab(ref, AppTab.yearlyReport);
                       Navigator.pop(context);
                     },
                     iconScale: iconScale,
@@ -250,7 +251,7 @@ class AppNavigationDrawer extends ConsumerWidget {
               theme: theme,
               icon: Icons.settings_outlined,
               text: localizations.settings,
-              isSelected: selectedTab == 4,
+              isSelected: false,
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
@@ -275,7 +276,6 @@ class AppNavigationDrawer extends ConsumerWidget {
                     MaterialPageRoute(
                       builder: (_) => DatabasePickerPage(
                         currentDbPath: appState.currentDbPath,
-                        isTablet: isTablet,
                       ),
                     ),
                   );
@@ -292,7 +292,7 @@ class AppNavigationDrawer extends ConsumerWidget {
   }
 
   Widget _buildDrawerHeader(BuildContext context, DatabaseState appState, ThemeData theme, String dbName, AppLocalizations localizations) {
-    final isTablet = this.isTablet || ResponsiveUtils.isTablet(context);
+    final isTablet = Responsive.of(context).isTablet;
     final textScale = isTablet ? 0.85 : 1.0;
     
     return Container(
@@ -333,15 +333,16 @@ class AppNavigationDrawer extends ConsumerWidget {
             ),
             if (appState.showNewYearBanner) ...[
               const SizedBox(height: 15),
-              _buildNewYearBanner(context, localizations, isTablet: isTablet),
+              _buildNewYearBanner(context, localizations),
             ]
           ],
         ),
     );
   }
 
-  Widget _buildNewYearBanner(BuildContext context, AppLocalizations localizations, {bool isTablet = false}) {
-    final textScale = ResponsiveUtils.getTextScaleFactor(context);
+  Widget _buildNewYearBanner(BuildContext context, AppLocalizations localizations) {
+    final isTablet = Responsive.of(context).isTablet;
+    final textScale = Responsive.of(context).textScaleFactor;
     
     return GestureDetector(
       onTap: () => _openDefaultDatabase(context),
@@ -400,36 +401,38 @@ class AppNavigationDrawer extends ConsumerWidget {
     final Color selectedColor = theme.colorScheme.primary;
     final Color defaultTextColor = theme.listTileTheme.textColor ?? theme.textTheme.bodyLarge?.color ?? Colors.black87;
     final Color defaultIconColor = theme.listTileTheme.iconColor ?? theme.iconTheme.color ?? Colors.grey;
-    final isTablet = this.isTablet || ResponsiveUtils.isTablet(context);
+    final isTablet = Responsive.of(context).isTablet;
 
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: isTablet ? 12 : 8, 
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 12 : 8,
         vertical: isTablet ? 6 : 4
       ),
-      decoration: BoxDecoration(
+      // The highlight is a Material, so the ListTile's ink splash stays visible.
+      child: Material(
         color: isSelected ? selectedColor.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(isTablet ? 12 : 8),
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 20 : 16,
-          vertical: isTablet ? 4 : 0,
-        ),
-        leading: Icon(
-          icon,
-          color: isSelected ? selectedColor : defaultIconColor,
-          size: (isTablet ? 32 : 24) * iconScale,
-        ),
-        title: Text(
-          text,
-          style: TextStyle(
-            fontSize: (isTablet ? 18 : 16) * textScale,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? selectedColor : defaultTextColor,
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 20 : 16,
+            vertical: isTablet ? 4 : 0,
           ),
+          leading: Icon(
+            icon,
+            color: isSelected ? selectedColor : defaultIconColor,
+            size: (isTablet ? 32 : 24) * iconScale,
+          ),
+          title: Text(
+            text,
+            style: TextStyle(
+              fontSize: (isTablet ? 18 : 16) * textScale,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? selectedColor : defaultTextColor,
+            ),
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }

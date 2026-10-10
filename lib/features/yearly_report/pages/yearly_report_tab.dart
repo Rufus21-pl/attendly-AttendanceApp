@@ -4,37 +4,46 @@ import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/features/yearly_report/providers/yearly_report_providers.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:attendly/app/shell/app_navigation_drawer.dart';
+import 'package:attendly/shared/shell/shell_tab.dart';
 import 'package:attendly/shared/widgets/refreshable_app_bar.dart';
-import 'package:attendly/shared/widgets/chart_dialog.dart'; 
+import 'package:attendly/shared/widgets/chart_dialog.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class YearlyReportTab extends ConsumerStatefulWidget {
-  final int selectedTab;
-  final void Function(int) onTabChange;
-  final bool isTablet;
-
-  const YearlyReportTab({
-    super.key,
-    required this.selectedTab,
-    required this.onTabChange,
-    required this.isTablet
-  });
+/// Totals and weekly averages over all countable weeks of the year.
+class YearlyReportTab extends ShellTab {
+  const YearlyReportTab();
 
   @override
-  ConsumerState<YearlyReportTab> createState() => _YearlyReportTabState();
-}
+  PreferredSizeWidget buildAppBar(BuildContext context, WidgetRef ref) {
+    final asyncStats = ref.watch(yearlyStatsProvider);
 
-class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
-  bool _isManualRefreshing = false;
-
-  @override
-  void initState() {
-    super.initState();
+    return RefreshableAppBar(
+      title: AppLocalizations.of(context).yearlyStats,
+      showRefresh: true,
+      isLoading: asyncStats.isLoading ||
+                 asyncStats.isReloading,
+      onRefresh: () {
+        AppLogger.d("Yearly", "Invalidating yearly stream");
+        ref.invalidate(yearlyStatsProvider);
+      },
+      leading: DrawerMenuButton.forShell(context),
+    );
   }
 
+  @override
+  Widget buildBody(BuildContext context, WidgetRef ref) => const _YearlyReportBody();
+}
+
+class _YearlyReportBody extends ConsumerStatefulWidget {
+  const _YearlyReportBody();
+
+  @override
+  ConsumerState<_YearlyReportBody> createState() => _YearlyReportBodyState();
+}
+
+class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
   void fetchYearStats() {
     ref.invalidate(yearlyStatsProvider);
   }
@@ -44,53 +53,20 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
     final localizations = AppLocalizations.of(context);
     final asyncStats = ref.watch(yearlyStatsProvider);
 
-    return Scaffold(
-      drawer: widget.isTablet
-          ? null
-          : AppNavigationDrawer(
-              selectedTab: widget.selectedTab,
-              onTabChange: widget.onTabChange,
+    return asyncStats.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildErrorState(error, stack),
+      data: (statsModel) {
+        if (statsModel == null) {
+          return Center(
+            child: Text(
+              localizations.noDataForThisYear,
+              style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
             ),
-      appBar: RefreshableAppBar(
-        title: localizations.yearlyStats,
-        showRefresh: true,
-        isLoading: asyncStats.isLoading || 
-                   asyncStats.isReloading || 
-                   _isManualRefreshing, 
-        onRefresh: () async {
-          setState(() => _isManualRefreshing = true);
-          AppLogger.d("Yearly", "Invalidating yearly stream");
-          fetchYearStats(); 
-
-          await Future.delayed(const Duration(milliseconds: 400));
-          if (mounted) setState(() => _isManualRefreshing = false);
-        },
-        isTablet: widget.isTablet,
-        leading: widget.isTablet
-            ? null
-            : Builder(
-                builder: (context) => IconButton(
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                  icon: Icon(Icons.menu,
-                      size: ResponsiveUtils.getIconSize(context, baseSize: 35)),
-                ),
-              ),
-      ),
-      body: asyncStats.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorState(error, stack),
-        data: (statsModel) {
-          if (statsModel == null) {
-            return Center(
-              child: Text(
-                localizations.noDataForThisYear,
-                style: TextStyle(fontSize: ResponsiveUtils.getBodyFontSize(context)),
-              ),
-            );
-          }
-          return _buildReportView(statsModel);
-        },
-      ),
+          );
+        }
+        return _buildReportView(statsModel);
+      },
     );
   }
 
@@ -112,22 +88,22 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
         children: [
           Icon(
             Icons.error_outline,
-            size: ResponsiveUtils.getIconSize(context, baseSize: 60),
+            size: Responsive.of(context).iconSize(baseSize: 60),
             color: Colors.red,
           ),
-          SizedBox(height: ResponsiveUtils.getListPadding(context).vertical * 4),
+          SizedBox(height: Responsive.of(context).listPadding.vertical * 4),
           
           // Display the actual error message dynamically
           Text(
             displayMessage,
-            style: TextStyle(fontSize: ResponsiveUtils.getBodyFontSize(context)),
+            style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
             textAlign: TextAlign.center,
           ),
           
-          SizedBox(height: ResponsiveUtils.getListPadding(context).vertical * 2),
+          SizedBox(height: Responsive.of(context).listPadding.vertical * 2),
           ElevatedButton(
             onPressed: fetchYearStats, 
-            child: Text('Retry', style: TextStyle(fontSize: ResponsiveUtils.getBodyFontSize(context))),
+            child: Text('Retry', style: TextStyle(fontSize: Responsive.of(context).bodyFontSize)),
           ),
         ],
       ),
@@ -149,10 +125,10 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(
-        ResponsiveUtils.getListPadding(context).left,
-        ResponsiveUtils.getListPadding(context).top,
-        ResponsiveUtils.getListPadding(context).right,
-        ResponsiveUtils.getListPadding(context).bottom +
+        Responsive.of(context).listPadding.left,
+        Responsive.of(context).listPadding.top,
+        Responsive.of(context).listPadding.right,
+        Responsive.of(context).listPadding.bottom +
             MediaQuery.of(context).padding.bottom,
       ),
       child: Column(
@@ -257,24 +233,24 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
     return Card(
       color: Theme.of(context).cardTheme.color,
       margin: EdgeInsets.only(
-          bottom: ResponsiveUtils.getListPadding(context).vertical * 3),
-      elevation: ResponsiveUtils.getCardElevation(context),
+          bottom: Responsive.of(context).listPadding.vertical * 3),
+      elevation: Responsive.of(context).cardElevation,
       shape: RoundedRectangleBorder(
-          borderRadius: ResponsiveUtils.getCardBorderRadius(context)),
+          borderRadius: Responsive.of(context).cardBorderRadius),
       child: Padding(
-        padding: ResponsiveUtils.getContentPadding(context),
+        padding: Responsive.of(context).contentPadding,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(icon,
                 color: Theme.of(context).primaryColor,
-                size: ResponsiveUtils.getIconSize(context)),
+                size: Responsive.of(context).iconSize()),
             SizedBox(
-                width: ResponsiveUtils.getListPadding(context).horizontal),
+                width: Responsive.of(context).listPadding.horizontal),
             Expanded(
               child: Text(title,
                   style: TextStyle(
-                      fontSize: ResponsiveUtils.getTitleFontSize(context),
+                      fontSize: Responsive.of(context).titleFontSize,
                       fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2),
@@ -282,7 +258,7 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
             if (showChart && data.isNotEmpty)
               IconButton(
                 icon: Icon(Icons.pie_chart,
-                    size: ResponsiveUtils.getIconSize(context)),
+                    size: Responsive.of(context).iconSize()),
                 onPressed: () => ChartDialog.show(context,
                     title: title, data: data),
               ),
@@ -315,24 +291,24 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
     return Card(
       color: Theme.of(context).cardTheme.color,
       margin: EdgeInsets.only(
-          bottom: ResponsiveUtils.getListPadding(context).vertical * 4),
-      elevation: ResponsiveUtils.getCardElevation(context),
+          bottom: Responsive.of(context).listPadding.vertical * 4),
+      elevation: Responsive.of(context).cardElevation,
       shape: RoundedRectangleBorder(
-          borderRadius: ResponsiveUtils.getCardBorderRadius(context)),
+          borderRadius: Responsive.of(context).cardBorderRadius),
       child: Padding(
-        padding: ResponsiveUtils.getContentPadding(context),
+        padding: Responsive.of(context).contentPadding,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(icon,
                 color: Theme.of(context).primaryColor,
-                size: ResponsiveUtils.getIconSize(context)),
+                size: Responsive.of(context).iconSize()),
             SizedBox(
-                width: ResponsiveUtils.getListPadding(context).horizontal),
+                width: Responsive.of(context).listPadding.horizontal),
             Expanded(
               child: Text(title,
                   style: TextStyle(
-                      fontSize: ResponsiveUtils.getTitleFontSize(context),
+                      fontSize: Responsive.of(context).titleFontSize,
                       fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2),
@@ -378,7 +354,7 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
           flex: 4,
           child: Text(gender,
               style: TextStyle(
-                  fontSize: ResponsiveUtils.getBodyFontSize(context),
+                  fontSize: Responsive.of(context).bodyFontSize,
                   fontWeight: FontWeight.bold)),
         ),
         Expanded(
@@ -387,7 +363,7 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
             alignment: Alignment.centerRight,
             child: IconButton(
               icon: Icon(Icons.pie_chart,
-                  size: ResponsiveUtils.getIconSize(context)),
+                  size: Responsive.of(context).iconSize()),
               onPressed: (withCount + withoutCount > 0)
                   ? () => ChartDialog.show(
                         context,
@@ -418,14 +394,14 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
     final localizations = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
-          bottom: ResponsiveUtils.getListPadding(context).vertical / 2),
+          bottom: Responsive.of(context).listPadding.vertical / 2),
       child: Row(children: [
         Expanded(
           flex: 4,
           child: Text(localizations.categoryAbbreviation,
               style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: ResponsiveUtils.getBodyFontSize(context))),
+                  fontSize: Responsive.of(context).bodyFontSize)),
         ),
         Expanded(
           flex: 2,
@@ -433,7 +409,7 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
             message: localizations.total,
             child: Center(
               child: Icon(Icons.groups_2_outlined,
-                  size: ResponsiveUtils.getIconSize(context, baseSize: 35),
+                  size: Responsive.of(context).iconSize(baseSize: 35),
                   color: Theme.of(context).primaryColor),
             ),
           ),
@@ -444,7 +420,7 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
             message: localizations.average,
             child: Center(
               child: Icon(Icons.show_chart,
-                  size: ResponsiveUtils.getIconSize(context),
+                  size: Responsive.of(context).iconSize(),
                   color: Theme.of(context).colorScheme.secondary),
             ),
           ),
@@ -456,10 +432,10 @@ class _YearlyReportTabState extends ConsumerState<YearlyReportTab> {
   Widget _buildDataRow(String label, dynamic value, int weekCount) {
     final total = value ?? 0;
     final avg = weekCount > 0 ? total / weekCount : 0.0;
-    final body = ResponsiveUtils.getBodyFontSize(context);
+    final body = Responsive.of(context).bodyFontSize;
     return Padding(
       padding: EdgeInsets.symmetric(
-          vertical: ResponsiveUtils.getListPadding(context).vertical / 2),
+          vertical: Responsive.of(context).listPadding.vertical / 2),
       child: Row(children: [
         Expanded(
             flex: 4, child: Text(label, style: TextStyle(fontSize: body))),

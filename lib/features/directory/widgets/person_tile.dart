@@ -15,7 +15,6 @@ class PersonTile extends StatefulWidget {
   final List<Widget> buildChildren;
   final bool isSelected;
   final bool isSelectionMode;
-  final bool isTablet;
 
   const PersonTile({
     super.key,
@@ -29,7 +28,6 @@ class PersonTile extends StatefulWidget {
     required this.buildChildren,
     this.isSelected = false,
     this.isSelectionMode = false,
-    this.isTablet = false,
   });
 
   @override
@@ -41,7 +39,7 @@ class _PersonTileState extends State<PersonTile> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final isTablet = widget.isTablet || ResponsiveUtils.isTablet(context);
+    final isTablet = Responsive.of(context).isTablet;
 
     final cardColor = widget.isSelected
         ? theme.primaryColor.withAlpha(15)
@@ -50,14 +48,14 @@ class _PersonTileState extends State<PersonTile> {
         ? theme.primaryColor
         : Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
 
-    final nameFontSize = ResponsiveUtils.getTitleFontSize(context);
-    final iconSize = ResponsiveUtils.getIconSize(context, baseSize: 34);
-    final smallIconSize = ResponsiveUtils.getIconSize(context, baseSize: 28);
-    final edgeInsets = ResponsiveUtils.getListPadding(context);
-    final innerPad = ResponsiveUtils.getContentPadding(context);
-    final baseElevation = ResponsiveUtils.getCardElevation(context);
+    final nameFontSize = Responsive.of(context).titleFontSize;
+    final iconSize = Responsive.of(context).iconSize(baseSize: 34);
+    final smallIconSize = Responsive.of(context).iconSize(baseSize: 28);
+    final edgeInsets = Responsive.of(context).listPadding;
+    final innerPad = Responsive.of(context).contentPadding;
+    final baseElevation = Responsive.of(context).cardElevation;
     final cardElevation = widget.isSelected ? baseElevation + 1 : baseElevation;
-    final radius = ResponsiveUtils.getCardBorderRadius(context);
+    final radius = Responsive.of(context).cardBorderRadius;
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: edgeInsets.vertical / 2),
@@ -157,7 +155,7 @@ class _PersonTileState extends State<PersonTile> {
                                   Text(
                                     localizations.noData,
                                     style: TextStyle(
-                                      fontSize: ResponsiveUtils.getBodyFontSize(context),
+                                      fontSize: Responsive.of(context).bodyFontSize,
                                     ),
                                   )
                                 ],
