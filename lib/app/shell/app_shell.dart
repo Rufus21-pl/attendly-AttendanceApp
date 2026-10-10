@@ -1,0 +1,162 @@
+import 'package:attendly/features/daily_log/pages/daily_log_tab.dart';
+import 'package:attendly/features/directory/pages/directory_tab.dart';
+import 'package:attendly/features/weekly_report/pages/weekly_report_tab.dart';
+import 'package:attendly/features/yearly_report/pages/yearly_report_tab.dart';
+import 'package:attendly/core/responsive/responsive.dart';
+import 'package:attendly/app/shell/app_navigation_drawer.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class AppShell extends StatefulWidget {
+  
+  const AppShell({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
+  int _selectedTab = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // After the first frame, switch from empty to the real page
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _selectedTab = 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _onTabChange(int index) {
+    if (index == _selectedTab) return;
+
+    setState(() => _selectedTab = index);
+  }
+
+  Widget _switcherTransition(Widget child, Animation<double> animation) {
+    final fade = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOut,
+      reverseCurve: Curves.easeInOut,
+    );
+    final slide = Tween<Offset>(
+      begin: const Offset(0.05, 0),
+      end: Offset.zero,
+    ).animate(fade);
+
+    return ClipRect(
+      child: FadeTransition(
+        opacity: fade,
+        child: SlideTransition(
+          position: slide,
+          child: RepaintBoundary(child: child),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isTablet = ResponsiveUtils.isTablet(context);
+    
+    SystemChrome.setSystemUIOverlayStyle(
+      (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+      ),
+    );
+    
+    if (isTablet) {
+      return _buildTabletLayout();
+    } else {
+      return _buildPhoneLayout();
+    }
+  }
+
+  Widget _buildPhoneLayout() {
+    return Scaffold(
+      drawer: AppNavigationDrawer(
+          selectedTab: _selectedTab, onTabChange: _onTabChange, isTablet: false),
+      body: SafeArea(child: _animatedBody()),
+    );
+  }
+ 
+  Widget _buildTabletLayout() {
+    return Scaffold(
+      drawer: AppNavigationDrawer(
+          selectedTab: _selectedTab, onTabChange: _onTabChange, isTablet: true),
+      body: SafeArea(
+        child: Row(
+          children: [
+            AppNavigationDrawer(
+                selectedTab: _selectedTab,
+                onTabChange: _onTabChange,
+                isTablet: true,
+                isRailMode: true),
+            const VerticalDivider(width: 1, thickness: 1),
+            Expanded(child: _animatedBody(isTablet: true)),
+          ],
+        ),
+      ),
+    );
+  }
+ 
+  Widget _animatedBody({bool isTablet = false}) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 550),
+      switchInCurve: Curves.easeInOut,
+      switchOutCurve: Curves.easeInOut,
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        fit: StackFit.expand,
+        children: [...previousChildren, if (currentChild != null) currentChild],
+      ),
+      transitionBuilder: _switcherTransition,
+      child: _buildPageForTab(_selectedTab, isTablet: isTablet),
+    );
+  }
+
+  Widget _buildPageForTab(int tabIndex, {bool isTablet = false}) {
+    switch (tabIndex) {
+      case -1: // Add this case
+        return Container(key: const ValueKey('initial_empty'));
+      case 0:
+        return DirectoryTab(
+          isSelectionMode: false,
+          selectedTab: _selectedTab,
+          onTabChange: _onTabChange,
+          isTablet: isTablet,
+        );
+      case 1:
+        return DailyLogTab(
+          selectedTab: _selectedTab,
+          onTabChange: _onTabChange,
+          isTablet: isTablet,
+        );
+      case 2:
+        return WeeklyReportTab(
+          selectedTab: _selectedTab,
+          onTabChange: _onTabChange,
+          isTablet: isTablet,
+        );
+      case 3:
+        return YearlyReportTab(
+          selectedTab: _selectedTab,
+          onTabChange: _onTabChange,
+          isTablet: isTablet,
+        );
+      default:
+        return Container(key: ValueKey('empty_$tabIndex'));
+    }
+  }
+}

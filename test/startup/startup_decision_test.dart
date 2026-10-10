@@ -1,5 +1,5 @@
-import 'package:attendly/frontend/pages/splash_screen/startup_decision.dart';
-import 'package:attendly/provider/database_provider.dart';
+import 'package:attendly/app/startup/startup_decision.dart';
+import 'package:attendly/data/database/database_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../fakes/fake_database_manager.dart';
@@ -7,11 +7,11 @@ import '../fakes/fake_database_manager.dart';
 void main() {
   group('decideStartup', () {
     late FakeDatabaseManager manager;
-    late DatabaseManagerNotifier notifier;
+    late DatabaseNotifier notifier;
 
     setUp(() {
       manager = FakeDatabaseManager();
-      notifier = DatabaseManagerNotifier(manager);
+      notifier = DatabaseNotifier(manager);
     });
 
     tearDown(() async {
@@ -60,13 +60,13 @@ void main() {
     });
   });
 
-  group('DatabaseManagerNotifier', () {
+  group('DatabaseNotifier', () {
     late FakeDatabaseManager manager;
-    late DatabaseManagerNotifier notifier;
+    late DatabaseNotifier notifier;
 
     setUp(() {
       manager = FakeDatabaseManager();
-      notifier = DatabaseManagerNotifier(manager);
+      notifier = DatabaseNotifier(manager);
     });
 
     tearDown(() async {
