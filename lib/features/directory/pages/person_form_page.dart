@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/database/app_database.dart';
@@ -7,6 +9,7 @@ import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/directory/widgets/person_form_fields.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
+import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,9 +41,17 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   final TextEditingController _migrationController = TextEditingController();
   final TextEditingController _homeCountryController = TextEditingController();
 
+  final FocusNode _nameFocusNode = FocusNode();
+
   DateTime? _birthday;
   Gender? _gender;
   bool? _migration;
+
+  /// The typed name when another person already has it; shown as a warning
+  /// under the name field.
+  String? _takenName;
+  String _checkedName = '';
+  Timer? _nameCheckTimer;
 
   @override
   void initState() {
@@ -54,16 +65,58 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       _gender = person.gender;
       _migration = person.migration;
     }
+    _checkedName = _nameController.text.trim();
+    _nameController.addListener(_onNameChanged);
   }
 
   @override
   void dispose() {
+    _nameCheckTimer?.cancel();
+    _nameFocusNode.dispose();
     _nameController.dispose();
     _birthdayController.dispose();
     _genderController.dispose();
     _migrationController.dispose();
     _homeCountryController.dispose();
     super.dispose();
+  }
+
+  /// Checks the name shortly after typing stops, so a duplicate is visible
+  /// before the user fills in the rest of the form.
+  void _onNameChanged() {
+    final name = _nameController.text.trim();
+    if (name == _checkedName) return;
+    // The user is changing the name: hide the old warning right away.
+    if (_takenName != null) setState(() => _takenName = null);
+    _nameCheckTimer?.cancel();
+    _nameCheckTimer = Timer(const Duration(milliseconds: 300), _checkName);
+  }
+
+  /// Returns whether another person already has the typed name, and shows
+  /// the warning when so.
+  Future<bool> _checkName() async {
+    final name = _nameController.text.trim();
+    _checkedName = name;
+    if (name.isEmpty) return false;
+
+    final bool taken;
+    try {
+      taken = await ref
+          .read(directoryRepositoryProvider)
+          .isNameTaken(name, exceptId: widget.person?.id);
+    } on custom_db_exceptions.DatabaseNotReadyException {
+      return false;
+    }
+    // Only the latest name counts; the user may have typed on meanwhile.
+    if (taken && mounted && name == _nameController.text.trim()) {
+      setState(() => _takenName = name);
+    }
+    return taken;
+  }
+
+  void _showNameTaken() {
+    setState(() => _takenName = _nameController.text.trim());
+    _nameFocusNode.requestFocus();
   }
 
   void _resetFields() {
@@ -90,16 +143,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       initialEntryMode: DatePickerEntryMode.calendar,
       initialDatePickerMode: DatePickerMode.year,
       keyboardType: TextInputType.numberWithOptions(),
-      builder: (context, child) {
-        if (!Responsive.of(context).isTablet || child == null) return child ?? const SizedBox.shrink();
-
-        final mq = MediaQuery.of(context);
-        final newScale = (mq.textScaler.scale(1.0) * 1.2).clamp(1.0, 1.6);
-        return MediaQuery(
-          data: mq.copyWith(textScaler: TextScaler.linear(newScale)),
-          child: Transform.scale(scale: 1.1, child: child),
-        );
-      },
+      builder: tabletDatePickerBuilder,
     );
 
     if (picked != null) {
@@ -145,6 +189,12 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       return;
     }
 
+    _nameCheckTimer?.cancel();
+    if (await _checkName()) {
+      if (mounted) _showNameTaken();
+      return;
+    }
+
     try {
       switch (widget.mode) {
         case PersonFormMode.add:
@@ -162,8 +212,10 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
           await AppDialogs.showSuccess(context, localizations.updatedSuccessfully);
           if (mounted) Navigator.of(context).pop(true);
       }
-    } on custom_db_exceptions.DuplicatePersonException catch (e) {
-      if (mounted) AppDialogs.showError(context, localizations.personNamedAlreadyExists(e.name));
+    } on custom_db_exceptions.DuplicatePersonException {
+      // Added by someone else after the check: same warning, no error dialog
+      // (it would also write the name to the log).
+      if (mounted) _showNameTaken();
     } on custom_db_exceptions.PersonNotFoundException catch (e) {
       if (mounted) AppDialogs.showError(context, localizations.personWithIdNotFound(e.id));
     } on custom_db_exceptions.DatabaseNotReadyException {
@@ -286,6 +338,8 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
                   onGenderChanged: (gender) => setState(() => _gender = gender),
                   onMigrationChanged: (migration) => setState(() => _migration = migration),
                   onPickBirthday: _pickBirthday,
+                  nameFocusNode: _nameFocusNode,
+                  nameError: _takenName == null ? null : localizations.personNamedAlreadyExists(_takenName!),
                 ),
                 SizedBox(height: isTablet ? 70 : 60),
                 if (widget.mode == PersonFormMode.add) ...[

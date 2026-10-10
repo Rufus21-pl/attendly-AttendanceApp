@@ -83,6 +83,21 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('the daily log date picker is enlarged on a tablet', (tester) async {
+      await pumpShell(tester, AppTab.dailyLog, tablet: true);
+
+      final today = DateTime.now();
+      await tester.tap(find.text('${today.day}.${today.month}.${today.year}'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      final scale = tester.widget<Transform>(find
+          .ancestor(of: find.byType(DatePickerDialog), matching: find.byType(Transform))
+          .first);
+      expect(scale.transform.getMaxScaleOnAxis(), closeTo(1.1, 0.001));
+      await unmount(tester);
+    });
+
     testWidgets('a tablet shows the rail next to the tab', (tester) async {
       await pumpShell(tester, AppTab.directory, tablet: true);
 

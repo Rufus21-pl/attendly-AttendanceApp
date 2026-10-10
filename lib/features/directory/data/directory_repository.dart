@@ -27,6 +27,11 @@ class DirectoryRepository {
     return await db.readDao.findPeopleByName(query);
   }
 
+  /// Whether a person other than [exceptId] already has [name] (case-insensitive).
+  Future<bool> isNameTaken(String name, {int? exceptId}) {
+    return db.readDao.isPersonNameTaken(name, exceptId: exceptId);
+  }
+
   /// Counts how many logs a person has before deletion
   Future<int> getEntryCountForPerson(int personId) async {
     return await db.readDao.countEntriesForPerson(personId);

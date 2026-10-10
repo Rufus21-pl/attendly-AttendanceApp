@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:attendly/shared/widgets/tab_app_bar.dart';
+import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:attendly/shared/shell/shell_tab.dart';
 import 'package:attendly/shared/widgets/chart_dialog.dart'; 
 import 'package:attendly/l10n/app_localizations.dart';
@@ -118,23 +119,7 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
       lastDate: DateTime.now(),
       selectableDayPredicate: (DateTime val) => val.weekday == DateTime.monday,
       keyboardType: const TextInputType.numberWithOptions(),
-      builder: (context, child) {
-        if (!Responsive.of(context).isTablet || child == null) return child ?? const SizedBox.shrink();
-
-       final mq = MediaQuery.of(context);
-       final currentScale = mq.textScaler.scale(1.0);
-       final newScale = (currentScale * 1.2).clamp(1.0, 1.6);
-       
-       return MediaQuery(
-          data: mq.copyWith(
-            textScaler: TextScaler.linear(newScale),
-          ),
-          child: Transform.scale(
-            scale: 1.1,
-            child: child,
-          ),
-        );
-      },
+      builder: tabletDatePickerBuilder,
     );
 
     if (picked != null && picked != selectedWeekDate && mounted) {

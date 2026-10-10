@@ -20,6 +20,12 @@ class PersonFormFields extends StatelessWidget {
   final ValueChanged<bool?> onMigrationChanged;
   final VoidCallback onPickBirthday;
 
+  /// Focus of the name field, so the page can jump to a name problem.
+  final FocusNode? nameFocusNode;
+
+  /// Warning under the name field, e.g. when the name already exists.
+  final String? nameError;
+
   const PersonFormFields({
     super.key,
     required this.nameController,
@@ -32,6 +38,8 @@ class PersonFormFields extends StatelessWidget {
     required this.onGenderChanged,
     required this.onMigrationChanged,
     required this.onPickBirthday,
+    this.nameFocusNode,
+    this.nameError,
   });
 
   @override
@@ -57,6 +65,7 @@ class PersonFormFields extends StatelessWidget {
           width: double.infinity,
           child: TextField(
             controller: nameController,
+            focusNode: nameFocusNode,
             style: TextStyle(fontSize: bodySize),
             decoration: InputDecoration(
               hintText: localizations.enterChildsName,
@@ -67,6 +76,7 @@ class PersonFormFields extends StatelessWidget {
                 onPressed: () => nameController.clear(),
               ),
               border: border,
+              error: nameError == null ? null : _NameWarning(nameError!, fontSize: bodySize - 2),
             ),
           ),
         ),
@@ -182,6 +192,28 @@ class PersonFormFields extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// A duplicate name is a normal mistake, so it is shown as a warning under
+/// the field instead of an error dialog.
+class _NameWarning extends StatelessWidget {
+  final String message;
+  final double fontSize;
+
+  const _NameWarning(this.message, {required this.fontSize});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.error;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.warning_amber_rounded, size: fontSize + 2, color: color),
+        const SizedBox(width: 6),
+        Expanded(child: Text(message, style: TextStyle(fontSize: fontSize, color: color))),
       ],
     );
   }

@@ -7,6 +7,7 @@ import 'package:attendly/features/daily_log/pages/daily_entry_form_page.dart';
 import 'package:attendly/features/daily_log/providers/daily_log_providers.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
+import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:attendly/shared/navigation/app_routes.dart';
 import 'package:attendly/shared/options/category_label.dart';
 import 'package:attendly/shared/options/category_option.dart';
@@ -163,6 +164,7 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       keyboardType: const TextInputType.numberWithOptions(),
+      builder: tabletDatePickerBuilder,
     );
 
     if (picked != null && picked != currentDate && mounted) {

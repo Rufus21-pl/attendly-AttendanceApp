@@ -6,6 +6,7 @@ import 'package:attendly/data/tables/directory_people_table.dart';
 import 'package:attendly/data/tables/enums/category.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:drift/remote.dart' show DriftRemoteException;
 
 part 'insert_dao.g.dart';
 
@@ -16,15 +17,24 @@ class InsertDao extends DatabaseAccessor<AppDatabase> with _$InsertDaoMixin, Sha
   // --- 1. All People Table Insertion ---
   /// Replaces allPeopleTable. Inserts a person into the directory.
   Future<void> insertDirPerson(DirectoryPeopleCompanion person) async {
+    final name = person.name.value;
+    // Checked before inserting: a failed insert logs the person's data with
+    // the SQL statement.
+    if (await db.readDao.isPersonNameTaken(name)) {
+      throw DuplicatePersonException(name);
+    }
+
     try {
       await into(directoryPeople).insert(person);
-    } on SqliteException catch (e) {
-      if (e.extendedResultCode == 2067) {
-        throw DuplicatePersonException(person.name.value);
-      }
-      throw DatabaseOperationException("Database constraint failed", originalException: e);
     } catch (e) {
-      rethrow;
+      // On the device the database runs in a background isolate, where
+      // SQLite errors arrive wrapped in a DriftRemoteException.
+      final cause = e is DriftRemoteException ? e.remoteCause : e;
+      if (cause is! SqliteException) rethrow;
+      if (cause.extendedResultCode == 2067) {
+        throw DuplicatePersonException(name);
+      }
+      throw DatabaseOperationException("Database constraint failed", originalException: cause);
     }
   }
 

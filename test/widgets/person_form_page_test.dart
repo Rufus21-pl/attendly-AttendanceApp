@@ -116,6 +116,29 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('typing an existing name warns before saving; changing it hides the warning',
+        (tester) async {
+      final anna = await loadPerson(tester, 'Anna');
+      await loadPerson(tester, 'Ben');
+
+      await openPage(tester, PersonFormPage(mode: PersonFormMode.edit, person: anna));
+      final nameField = find.widgetWithText(TextField, 'Anna');
+      await tester.enterText(nameField, 'ben');
+      await tester.pump(const Duration(milliseconds: 300));
+      await settleStreams(tester);
+
+      expect(find.text(l10n.personNamedAlreadyExists('ben')), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextField, 'ben'), 'Benno');
+      await tester.pump();
+      expect(find.text(l10n.personNamedAlreadyExists('ben')), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 300));
+      await settleStreams(tester);
+      expect(find.textContaining('already exists'), findsNothing);
+      await unmount(tester);
+    });
+
     testWidgets('a duplicate name shows the duplicate message', (tester) async {
       final anna = await loadPerson(tester, 'Anna');
       await loadPerson(tester, 'Ben');

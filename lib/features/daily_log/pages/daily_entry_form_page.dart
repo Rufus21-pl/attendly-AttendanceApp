@@ -10,6 +10,7 @@ import 'package:attendly/features/daily_log/providers/daily_log_providers.dart';
 import 'package:attendly/features/daily_log/widgets/daily_entry_fields.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
+import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:attendly/shared/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -136,16 +137,7 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       keyboardType: TextInputType.numberWithOptions(),
-      builder: (context, child) {
-        if (!Responsive.of(context).isTablet || child == null) return child ?? const SizedBox.shrink();
-
-        final mq = MediaQuery.of(context);
-        final newScale = (mq.textScaler.scale(1.0) * 1.2).clamp(1.0, 1.6);
-        return MediaQuery(
-          data: mq.copyWith(textScaler: TextScaler.linear(newScale)),
-          child: Transform.scale(scale: 1.1, child: child),
-        );
-      },
+      builder: tabletDatePickerBuilder,
     );
 
     if (picked != null && picked != _date) {

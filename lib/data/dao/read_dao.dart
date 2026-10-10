@@ -31,6 +31,18 @@ class ReadDao extends DatabaseAccessor<AppDatabase> with _$ReadDaoMixin {
     return (select(directoryPeople)..where((t) => t.name.equals(name))).get();
   }
 
+  /// Whether a person other than [exceptId] already has [name]. Compares like
+  /// the UNIQUE constraint on the column (NOCASE): "anna" equals "Anna".
+  Future<bool> isPersonNameTaken(String name, {int? exceptId}) async {
+    final query = selectOnly(directoryPeople)
+      ..addColumns([directoryPeople.id])
+      ..where(exceptId == null
+          ? directoryPeople.name.equals(name)
+          : directoryPeople.name.equals(name) & directoryPeople.id.equals(exceptId).not())
+      ..limit(1);
+    return await query.getSingleOrNull() != null;
+  }
+
   // --- Daily ---
 
   Future<List<DailyEntryData>> getDailyEntriesByPersonId(int id) {
