@@ -9,10 +9,10 @@ on:
 jobs:
   build:
     name: Backend Validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 1. Use the official Flutter action instead of Dart
       - name: Set up Flutter
