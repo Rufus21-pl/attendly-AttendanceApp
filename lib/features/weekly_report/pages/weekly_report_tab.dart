@@ -7,6 +7,9 @@ import 'package:attendly/features/weekly_report/providers/weekly_report_provider
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:attendly/shared/widgets/date_navigator.dart';
+import 'package:attendly/shared/widgets/empty_state.dart';
+import 'package:attendly/shared/widgets/section_header.dart';
 import 'package:attendly/shared/widgets/tab_app_bar.dart';
 import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:attendly/shared/shell/shell_tab.dart';
@@ -176,11 +179,9 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
             // Errors are reported to the startup gate by the listener above.
             error: (error, _) => const Center(child: CircularProgressIndicator()),
             data: (weekData) => weekData == null
-                ? Center(
-                    child: Text(
-                      localizations.noDataForThisWeek,
-                      style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
-                    )
+                ? EmptyState(
+                    icon: Icons.event_note_outlined,
+                    message: localizations.noDataForThisWeek,
                   )
                 : _buildReportView(weekData),
           ),
@@ -191,37 +192,16 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
 
   Widget _buildWeekSelector(DateTime endDate) {
     final canGoForward = selectedWeekDate.isBefore(getFirstDateOfWeek(getScopedDate()));
-    final arrowSize = Responsive.of(context).iconSize(baseSize: 30);
-    final listPad = Responsive.of(context).listPadding;
+    final calendarWeek = isoCalendarWeek(selectedWeekDate);
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          onPressed: () => _changeWeek(-7),
-          icon: const Icon(Icons.arrow_back_ios_sharp),
-          iconSize: arrowSize,
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: listPad.vertical * 2),
-          child: GestureDetector(
-            onTap: _selectWeek,
-            child: Text(
-              "${DateFormat('dd.MM.yyyy').format(selectedWeekDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: Responsive.of(context).titleFontSize,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: canGoForward ? () => _changeWeek(7) : null,
-          icon: const Icon(Icons.arrow_forward_ios_sharp),
-          iconSize: arrowSize,
-        ),
-      ],
+    // Same two-line layout as the daily log: calendar week and year above,
+    // the days without the year below, so the text needs no shrinking.
+    return DateNavigator(
+      label: "${DateFormat('dd.MM.').format(selectedWeekDate)} - ${DateFormat('dd.MM.').format(endDate)}",
+      subtitle: AppLocalizations.of(context).calendarWeek(calendarWeek.week, calendarWeek.year),
+      onPick: _selectWeek,
+      onPrevious: () => _changeWeek(-7),
+      onNext: canGoForward ? () => _changeWeek(7) : null,
     );
   }
 
@@ -308,7 +288,6 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
   }) {
     final theme = Theme.of(context);
     final cardColor = theme.cardTheme.color ?? theme.cardColor;
-    final iconColor = theme.primaryColor;
     final localizations = AppLocalizations.of(context);
 
     return Card(
@@ -321,21 +300,7 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: iconColor, size: Responsive.of(context).iconSize()),
-                SizedBox(width: Responsive.of(context).listPadding.horizontal / 2 + 4),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: Responsive.of(context).titleFontSize,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            SectionHeader(icon: icon, title: title),
             const Divider(height: 24),
             _buildMigrationGenderRow(
               gender: localizations.male,
@@ -385,6 +350,7 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
             ),
             IconButton(
               icon: Icon(Icons.pie_chart, size: Responsive.of(context).iconSize()),
+              color: Theme.of(context).colorScheme.primary,
               onPressed: (withCount + withoutCount > 0)
                   ? () => ChartDialog.show(
                         context,
@@ -422,28 +388,18 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: theme.primaryColor, size: Responsive.of(context).iconSize()),
-                SizedBox(width: Responsive.of(context).listPadding.horizontal / 2  + 4),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: Responsive.of(context).titleFontSize,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            SectionHeader(
+              icon: icon,
+              title: title,
+              trailing: IconButton(
+                icon: Icon(Icons.pie_chart, size: Responsive.of(context).iconSize()),
+                color: theme.colorScheme.primary,
+                onPressed: () => ChartDialog.show(
+                  context,
+                  title: title,
+                  data: data,
                 ),
-                IconButton(
-                  icon: Icon(Icons.pie_chart, size: Responsive.of(context).iconSize()),
-                  onPressed: () => ChartDialog.show(
-                    context,
-                    title: title,
-                    data: data,
-                  ),
-                )
-              ],
+              ),
             ),
             const Divider(height: 24),
             ...data.entries.map((e) => _buildDataRow(e.key, e.value)),
@@ -465,7 +421,7 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
             style: TextStyle(
               fontSize: Responsive.of(context).bodyFontSize,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ],
