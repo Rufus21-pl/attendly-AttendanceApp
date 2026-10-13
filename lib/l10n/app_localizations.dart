@@ -13,6 +13,9 @@ abstract class AppLocalizations {
   String get appWillRestart;
   String get enableDisableDarkTheme;
   String get selectApplicationLanguage;
+  String get appearanceSection;
+  String get dataSection;
+  String get aboutSection;
   String get darkModeOn;
   String get darkModeOff;
   String get languageSetTo;
