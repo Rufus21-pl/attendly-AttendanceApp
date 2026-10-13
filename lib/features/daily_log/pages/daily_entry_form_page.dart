@@ -61,7 +61,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
   };
 
   final TextEditingController _commentController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _multiplierController = TextEditingController(text: '1');
 
@@ -93,7 +92,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
   @override
   void dispose() {
     _commentController.dispose();
-    _categoryController.dispose();
     _dateController.dispose();
     _multiplierController.dispose();
     super.dispose();
@@ -108,7 +106,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
     setState(() {
       _persons = [...widget.preselectedPersons];
       _commentController.clear();
-      _categoryController.clear();
       _category = null;
       _multiplier = 1;
       _multiplierController.text = '1';
@@ -346,8 +343,7 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
                 gap,
 
                 FieldLabel(_isAdd ? localizations.selectCategoryTitle : '${localizations.category}:'),
-                CategoryDropdown(
-                  controller: _categoryController,
+                CategoryChips(
                   selected: _category,
                   onChanged: (category) => setState(() {
                     _category = category;
