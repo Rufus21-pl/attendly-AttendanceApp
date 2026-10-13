@@ -60,6 +60,21 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('the home country field appears only with a migration background',
+        (tester) async {
+      await openPage(tester, const PersonFormPage(mode: PersonFormMode.add));
+      expect(find.text(l10n.homeCountry), findsNothing);
+
+      await tester.tap(find.widgetWithText(ChoiceChip, l10n.yes));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.homeCountry), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(ChoiceChip, l10n.no));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.homeCountry), findsNothing);
+      await unmount(tester);
+    });
+
     testWidgets('submitting an empty form asks to fill all fields', (tester) async {
       await openPage(tester, const PersonFormPage(mode: PersonFormMode.add));
 
