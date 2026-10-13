@@ -31,8 +31,14 @@ class AppTheme {
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: Colors.white,
@@ -107,8 +113,14 @@ class AppTheme {
         elevation: 2,
         color: Colors.grey[850],
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: Colors.grey[800],
+        surfaceTintColor: Colors.transparent,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: Colors.grey[850],
