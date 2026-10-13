@@ -10,6 +10,7 @@ import 'package:attendly/features/daily_log/providers/daily_log_providers.dart';
 import 'package:attendly/features/daily_log/widgets/daily_entry_fields.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
+import 'package:attendly/shared/widgets/form_actions.dart';
 import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:attendly/shared/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -115,7 +116,7 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
       _dateController.text = _dateFormat.format(_date);
     });
 
-    AppDialogs.showSnack(context, AppLocalizations.of(context).allFieldsReset);
+    AppDialogs.showSnack(context, AppLocalizations.of(context).allFieldsReset, icon: Icons.refresh);
   }
 
   Future<void> _pickPersons() async {
@@ -273,8 +274,8 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
     final responsive = Responsive.of(context);
     final iconSize = responsive.iconSize();
     final padding = responsive.contentPadding;
-    final gap = SizedBox(height: responsive.listPadding.vertical * 2);
-    final buttonPadding = EdgeInsets.symmetric(vertical: padding.vertical / 2);
+    final gap = SizedBox(height: responsive.listPadding.vertical * 4);
+    final scheme = Theme.of(context).colorScheme;
 
     final title = switch (widget.mode) {
       DailyEntryFormMode.add => localizations.addPersonToDailyTable,
@@ -326,15 +327,22 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
                       hintText: "YYYY-MM-dd",
                       hintStyle: TextStyle(fontSize: responsive.bodyFontSize),
                       contentPadding: padding,
+                      prefixIcon: Icon(Icons.event_outlined, size: iconSize, color: scheme.primary),
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.calendar_today, size: iconSize),
+                        icon: Icon(Icons.edit_calendar_outlined, size: iconSize),
                         onPressed: _pickDate,
                       ),
                       border: OutlineInputBorder(borderRadius: responsive.cardBorderRadius),
                     ),
                   ),
                 ] else
-                  FieldLabel('${localizations.date}: ${_dateController.text}'),
+                  Row(
+                    children: [
+                      Icon(Icons.event_outlined, size: iconSize, color: scheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(child: FieldLabel('${localizations.date}: ${_dateController.text}')),
+                    ],
+                  ),
                 gap,
 
                 FieldLabel(_isAdd ? localizations.selectCategoryTitle : '${localizations.category}:'),
@@ -351,7 +359,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
                 if (_showMultiplier) ...[
                   gap,
                   FieldLabel(localizations.numberOfEntries),
-                  const SizedBox(height: 8),
                   MultiplierInput(
                     controller: _multiplierController,
                     value: _multiplier,
@@ -369,8 +376,9 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
                     hintText: _isAdd ? localizations.enterDescriptionOptional : localizations.enterComment,
                     hintStyle: TextStyle(fontSize: responsive.bodyFontSize),
                     contentPadding: padding,
+                    prefixIcon: Icon(Icons.notes, size: iconSize, color: scheme.primary),
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.cancel, size: iconSize),
+                      icon: Icon(Icons.clear, size: iconSize),
                       onPressed: () => _commentController.clear(),
                     ),
                     border: OutlineInputBorder(borderRadius: responsive.cardBorderRadius),
@@ -378,38 +386,12 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
                 ),
                 SizedBox(height: responsive.buttonHeight),
 
-                if (_isAdd) ...[
-                  OutlinedButton.icon(
-                    onPressed: _resetFields,
-                    icon: Icon(Icons.refresh, size: responsive.iconSize(baseSize: 26)),
-                    label: Text(localizations.reset, style: TextStyle(fontSize: responsive.bodyFontSize)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                      side: BorderSide(color: Theme.of(context).primaryColor),
-                      padding: buttonPadding,
-                    ),
-                  ),
-                  SizedBox(height: responsive.listPadding.vertical * 1.5),
-                  ElevatedButton.icon(
-                    onPressed: _submit,
-                    icon: Icon(Icons.check, size: responsive.iconSize(baseSize: 28), color: Colors.white),
-                    label: Text(localizations.submit, style: TextStyle(fontSize: responsive.bodyFontSize)),
-                    style: ElevatedButton.styleFrom(padding: buttonPadding),
-                  ),
-                ] else
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: _submit,
-                      icon: Icon(Icons.save, color: Colors.white, size: responsive.iconSize(baseSize: 28)),
-                      label: Text(localizations.saveChanges, style: TextStyle(fontSize: responsive.bodyFontSize)),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: padding.horizontal,
-                          vertical: padding.vertical / 2,
-                        ),
-                      ),
-                    ),
-                  ),
+                FormActions(
+                  onReset: _isAdd ? _resetFields : null,
+                  onSubmit: _submit,
+                  submitLabel: _isAdd ? localizations.submit : localizations.saveChanges,
+                  submitIcon: _isAdd ? Icons.check : Icons.save,
+                ),
                 SizedBox(height: MediaQuery.of(context).padding.bottom),
               ],
             ),
