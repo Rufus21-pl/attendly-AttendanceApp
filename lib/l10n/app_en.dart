@@ -442,6 +442,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchByNameAndDescription => 'Name & Description';
   @override
   String get searchIn => 'Search in';
+  @override
+  String get searchHint => 'Search the daily log by name, description or category.';
 
   // For add_page_daily.dart
   @override
