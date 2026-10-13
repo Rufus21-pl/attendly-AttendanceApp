@@ -2,7 +2,7 @@ import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/tables/enums/category.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/options/category_option.dart';
-import 'package:collection/collection.dart';
+import 'package:attendly/shared/widgets/choice_chip_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -14,11 +14,14 @@ class FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: Responsive.of(context).bodyFontSize,
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: Responsive.of(context).bodyFontSize,
+        ),
       ),
     );
   }
@@ -43,22 +46,37 @@ class PersonSelectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     final responsive = Responsive.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final isEmpty = names.isEmpty;
+    final muted = scheme.onSurface.withValues(alpha: 0.6);
 
     return Card(
-      elevation: responsive.cardElevation + 2,
-      shape: RoundedRectangleBorder(borderRadius: responsive.cardBorderRadius),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: isEmpty ? null : scheme.primary.withValues(alpha: 0.06),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: responsive.cardBorderRadius,
+        side: BorderSide(
+          color: isEmpty ? theme.dividerColor : scheme.primary.withValues(alpha: 0.5),
+          width: isEmpty ? 1 : 1.5,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: responsive.cardBorderRadius,
         child: Padding(
           padding: responsive.contentPadding,
           child: Row(
             children: [
-              Icon(
-                isEmpty ? Icons.person_add : Icons.group,
-                size: responsive.iconSize(baseSize: 40),
-                color: isEmpty ? Colors.grey : Colors.blue,
+              CircleAvatar(
+                radius: responsive.isTablet ? 28 : 22,
+                backgroundColor: scheme.primary.withValues(alpha: isEmpty ? 0.08 : 0.15),
+                child: Icon(
+                  isEmpty ? Icons.person_add_alt_1_outlined : Icons.group,
+                  size: responsive.iconSize(baseSize: 24),
+                  color: scheme.primary,
+                ),
               ),
               SizedBox(width: responsive.contentPadding.horizontal / 2),
               Expanded(
@@ -72,7 +90,7 @@ class PersonSelectionCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: responsive.bodyFontSize,
                         fontWeight: FontWeight.bold,
-                        color: isEmpty ? Colors.grey : Theme.of(context).textTheme.bodyLarge?.color,
+                        color: isEmpty ? muted : null,
                       ),
                     ),
                     if (!isEmpty) ...[
@@ -81,10 +99,7 @@ class PersonSelectionCard extends StatelessWidget {
                         names.join(', '),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: responsive.bodyFontSize - 2,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: responsive.bodyFontSize - 2, color: muted),
                       ),
                     ],
                   ],
@@ -93,8 +108,10 @@ class PersonSelectionCard extends StatelessWidget {
               if (!isEmpty && onClear != null)
                 IconButton(
                   onPressed: onClear,
-                  icon: Icon(Icons.close, color: Colors.red, size: responsive.iconSize()),
-                ),
+                  icon: Icon(Icons.close, color: scheme.error, size: responsive.iconSize()),
+                )
+              else if (onTap != null)
+                Icon(Icons.chevron_right, color: muted, size: responsive.iconSize()),
             ],
           ),
         ),
@@ -103,57 +120,26 @@ class PersonSelectionCard extends StatelessWidget {
   }
 }
 
-/// Category dropdown with a clear button.
-class CategoryDropdown extends StatelessWidget {
-  final TextEditingController controller;
+/// The categories as chips; tapping the selected one again clears it.
+class CategoryChips extends StatelessWidget {
   final Category? selected;
   final ValueChanged<Category?> onChanged;
 
-  const CategoryDropdown({
+  const CategoryChips({
     super.key,
-    required this.controller,
     required this.selected,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final responsive = Responsive.of(context);
-    final options = getCategoryOptions(context);
-
-    return DropdownMenu<CategoryOption>(
-      controller: controller,
-      expandedInsets: EdgeInsets.zero,
-      hintText: AppLocalizations.of(context).selectCategory,
-      textStyle: TextStyle(fontSize: responsive.bodyFontSize),
-      initialSelection: options.firstWhereOrNull((option) => option.category == selected),
-      enableFilter: true,
-      requestFocusOnTap: false,
-      onSelected: (option) => onChanged(option?.category),
-      dropdownMenuEntries: options.map((option) {
-        return DropdownMenuEntry<CategoryOption>(
-          value: option,
-          label: option.label,
-          leadingIcon: option.icon != null ? Icon(option.icon, size: responsive.iconSize()) : null,
-          style: MenuItemButton.styleFrom(
-            textStyle: TextStyle(fontSize: responsive.bodyFontSize),
-          ),
-        );
-      }).toList(),
-      menuHeight: responsive.isTablet ? 300 : 250,
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: responsive.cardBorderRadius),
-        contentPadding: responsive.contentPadding,
-      ),
-      trailingIcon: selected != null
-          ? IconButton(
-              icon: Icon(Icons.clear, size: responsive.iconSize()),
-              onPressed: () {
-                controller.clear();
-                onChanged(null);
-              },
-            )
-          : null,
+    return ChoiceChipGroup<Category>(
+      choices: [
+        for (final option in getCategoryOptions(context))
+          (value: option.category, label: option.label, icon: option.icon),
+      ],
+      selected: selected,
+      onChanged: onChanged,
     );
   }
 }
@@ -182,34 +168,40 @@ class MultiplierInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final responsive = Responsive.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final iconSize = responsive.iconSize();
 
     return Row(
       children: [
         Container(
+          padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(8),
+            color: scheme.primary.withValues(alpha: 0.06),
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(32),
           ),
           child: Row(
             children: [
-              IconButton(
+              IconButton.filledTonal(
                 icon: Icon(Icons.remove, size: iconSize),
                 onPressed: value > 1 ? () => _step(-1) : null,
               ),
               SizedBox(
-                width: 60,
+                width: responsive.isTablet ? 80 : 60,
                 child: TextField(
                   controller: controller,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: TextStyle(
-                    fontSize: responsive.bodyFontSize,
+                    fontSize: responsive.bodyFontSize + 2,
                     fontWeight: FontWeight.bold,
                   ),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 8),
                   ),
@@ -219,7 +211,7 @@ class MultiplierInput extends StatelessWidget {
                   },
                 ),
               ),
-              IconButton(
+              IconButton.filledTonal(
                 icon: Icon(Icons.add, size: iconSize),
                 onPressed: () => _step(1),
               ),

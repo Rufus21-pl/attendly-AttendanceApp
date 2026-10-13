@@ -13,9 +13,13 @@ import 'package:attendly/shared/navigation/app_routes.dart';
 import 'package:attendly/shared/options/category_label.dart';
 import 'package:attendly/shared/options/category_option.dart';
 import 'package:attendly/shared/shell/shell_tab.dart';
+import 'package:attendly/shared/widgets/choice_chip_group.dart';
+import 'package:attendly/shared/widgets/date_navigator.dart';
+import 'package:attendly/shared/widgets/empty_state.dart';
 import 'package:attendly/shared/widgets/tab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 /// Daily attendance: entries of one day, grouped by person, with an edit
 /// mode for bulk actions.
@@ -217,9 +221,6 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final responsive = Responsive.of(context);
-
     // Watch state
     final asyncFilteredData = ref.watch(dailyFilteredLogsProvider);
     final selectedDate = ref.watch(dailyDateProvider);
@@ -239,54 +240,27 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
     final todayDateOnly = DateTime(now.year, now.month, now.day);
     final selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final isTodayOrFuture = !selectedDateOnly.isBefore(todayDateOnly);
-    final arrowIconSize = responsive.iconSize(baseSize: 30);
+    final weekday = DateFormat.EEEE(Localizations.localeOf(context).toString()).format(selectedDate);
 
     return Center(
       child: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: responsive.listPadding.horizontal,
-              vertical: responsive.listPadding.vertical,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  onPressed:
-                      () =>
-                          ref.read(dailyDateProvider.notifier).state = selectedDate.subtract(
-                            const Duration(days: 1),
-                          ),
-                  icon: Icon(Icons.arrow_back_ios_sharp, color: theme.iconTheme.color),
-                  iconSize: arrowIconSize,
-                ),
-                GestureDetector(
-                  onTap: _selectDate,
-                  child: Text(
-                    "${selectedDate.day}.${selectedDate.month}.${selectedDate.year}",
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: responsive.titleFontSize,
+          DateNavigator(
+            label: "${selectedDate.day}.${selectedDate.month}.${selectedDate.year}",
+            subtitle: weekday,
+            onPick: _selectDate,
+            onPrevious:
+                () =>
+                    ref.read(dailyDateProvider.notifier).state = selectedDate.subtract(
+                      const Duration(days: 1),
                     ),
-                  ),
-                ),
-                IconButton(
-                  onPressed:
-                      isTodayOrFuture
-                          ? null
-                          : () =>
-                              ref.read(dailyDateProvider.notifier).state = selectedDate.add(
-                                const Duration(days: 1),
-                              ),
-                  icon: Icon(
-                    Icons.arrow_forward_ios_sharp,
-                    color: isTodayOrFuture ? theme.disabledColor : theme.iconTheme.color,
-                  ),
-                  iconSize: arrowIconSize,
-                ),
-              ],
-            ),
+            onNext:
+                isTodayOrFuture
+                    ? null
+                    : () =>
+                        ref.read(dailyDateProvider.notifier).state = selectedDate.add(
+                          const Duration(days: 1),
+                        ),
           ),
           const _FilterSection(),
           Expanded(
@@ -433,9 +407,10 @@ class _FilterSection extends ConsumerStatefulWidget {
   ConsumerState<_FilterSection> createState() => _FilterSectionState();
 }
 
+/// Collapsible name search and category chips. When collapsed, a badge and a
+/// summary line show which filters are active.
 class _FilterSectionState extends ConsumerState<_FilterSection> {
   final _searchController = TextEditingController();
-  final _categoryController = TextEditingController();
 
   @override
   void initState() {
@@ -448,51 +423,93 @@ class _FilterSectionState extends ConsumerState<_FilterSection> {
   @override
   void dispose() {
     _searchController.dispose();
-    _categoryController.dispose();
     super.dispose();
+  }
+
+  void _resetFilters() {
+    _searchController.clear();
+    ref.read(dailyCategoryFilterProvider.notifier).state = null;
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final body = Responsive.of(context).bodyFontSize;
+    final responsive = Responsive.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final body = responsive.bodyFontSize;
+    final search = ref.watch(dailySearchProvider);
     final selectedCat = ref.watch(dailyCategoryFilterProvider);
+    final categoryOptions = getCategoryOptions(context);
+    final activeCount = (search.isNotEmpty ? 1 : 0) + (selectedCat != null ? 1 : 0);
+    final shape = RoundedRectangleBorder(borderRadius: responsive.cardBorderRadius);
 
-    // Sync controllers when providers are externally reset (e.g. on date change).
+    // Sync the search field when the provider is externally reset (e.g. on date change).
     // ref.listen callbacks fire after build — safe to mutate controller state here.
     ref.listen<String>(dailySearchProvider, (_, next) {
       if (next.isEmpty && _searchController.text.isNotEmpty) _searchController.clear();
     });
-    ref.listen<String?>(dailyCategoryFilterProvider, (_, next) {
-      if (next == null && _categoryController.text.isNotEmpty) _categoryController.clear();
-    });
+
+    final summary = [
+      if (search.isNotEmpty) '"$search"',
+      if (selectedCat != null) localizedCategoryLabel(context, selectedCat),
+    ].join(' · ');
 
     return Padding(
-      padding: Responsive.of(context).listPadding,
+      padding: responsive.listPadding.copyWith(
+        left: responsive.listPadding.horizontal + 4,
+        right: responsive.listPadding.horizontal + 4,
+      ),
       child: ExpansionTile(
-        leading: const Icon(Icons.filter_list),
+        shape: shape,
+        collapsedShape: shape,
+        clipBehavior: Clip.antiAlias,
+        backgroundColor: scheme.primary.withValues(alpha: 0.06),
+        collapsedBackgroundColor: scheme.primary.withValues(alpha: 0.06),
+        leading: Badge(
+          isLabelVisible: activeCount > 0,
+          label: Text('$activeCount'),
+          child: Icon(Icons.filter_list, color: scheme.primary, size: responsive.iconSize()),
+        ),
         title: Text(
           localizations.filterOptions,
           style: TextStyle(
-            fontSize: Responsive.of(context).titleFontSize,
+            fontSize: responsive.titleFontSize,
             fontWeight: FontWeight.w600,
           ),
         ),
+        subtitle:
+            summary.isEmpty
+                ? null
+                : Text(
+                  summary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: responsive.smallFontSize + 2, color: scheme.primary),
+                ),
         tilePadding: const EdgeInsets.symmetric(horizontal: 16.0),
-        childrenPadding: Responsive.of(context).listPadding,
+        childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, responsive.isTablet ? 16 : 12),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: _searchController,
             style: TextStyle(fontSize: body + 2),
             decoration: InputDecoration(
-              labelText: localizations.searchByName,
-              labelStyle: TextStyle(fontSize: body + 2, color: Theme.of(context).primaryColor),
+              hintText: localizations.searchByName,
+              hintStyle: TextStyle(fontSize: body + 2),
+              isDense: true,
+              filled: true,
+              fillColor: Theme.of(context).cardTheme.color,
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
-                borderRadius: Responsive.of(context).cardBorderRadius,
+                borderRadius: BorderRadius.circular(32),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(32),
+                borderSide: BorderSide(color: scheme.primary, width: 2),
               ),
               suffixIcon:
-                  _searchController.text.isNotEmpty
+                  search.isNotEmpty
                       ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () => _searchController.clear(),
@@ -500,38 +517,30 @@ class _FilterSectionState extends ConsumerState<_FilterSection> {
                       : null,
             ),
           ),
-          const SizedBox(height: 12),
-          DropdownMenu<CategoryOption?>(
-            controller: _categoryController,
-            expandedInsets: EdgeInsets.zero,
-            textStyle: TextStyle(fontSize: body + 2),
-            enableFilter: true,
-            label: Text(localizations.filterByCategory, style: TextStyle(fontSize: body)),
-            onSelected:
-                (item) =>
-                    ref.read(dailyCategoryFilterProvider.notifier).state = item?.category.name,
-            dropdownMenuEntries:
-                getCategoryOptions(context)
-                    .map(
-                      (item) => DropdownMenuEntry(
-                        value: item,
-                        label: item.label,
-                        leadingIcon: item.icon != null ? Icon(item.icon) : null,
-                        style: MenuItemButton.styleFrom(textStyle: TextStyle(fontSize: body + 2)),
-                      ),
-                    )
-                    .toList(),
-            trailingIcon:
-                selectedCat != null
-                    ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _categoryController.clear();
-                        ref.read(dailyCategoryFilterProvider.notifier).state = null;
-                      },
-                    )
-                    : null,
+          SizedBox(height: responsive.isTablet ? 16 : 12),
+          Text(
+            localizations.filterByCategory,
+            style: TextStyle(fontSize: body - 2, fontWeight: FontWeight.w600),
           ),
+          const SizedBox(height: 8),
+          // Tapping the selected chip again clears the category filter.
+          ChoiceChipGroup<String>(
+            choices: [
+              for (final option in categoryOptions)
+                (value: option.category.name, label: option.label, icon: option.icon),
+            ],
+            selected: selectedCat,
+            onChanged: (category) => ref.read(dailyCategoryFilterProvider.notifier).state = category,
+          ),
+          if (activeCount > 0)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                icon: Icon(Icons.filter_alt_off_outlined, size: responsive.iconSize(baseSize: 20)),
+                label: Text(localizations.reset, style: TextStyle(fontSize: body - 2)),
+                onPressed: _resetFilters,
+              ),
+            ),
         ],
       ),
     );
@@ -557,45 +566,93 @@ class _PersonList extends StatelessWidget {
     required this.onDeleteCategory,
   });
 
+  /// An entry of the edit/delete menu: tinted icon and label.
+  static PopupMenuItem<String> _menuItem(
+    BuildContext context, {
+    required String value,
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    final responsive = Responsive.of(context);
+    return PopupMenuItem(
+      value: value,
+      height: responsive.buttonHeight + 4,
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: responsive.iconSize(baseSize: 22)),
+          SizedBox(width: responsive.isTablet ? 16 : 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: responsive.bodyFontSize,
+              fontWeight: FontWeight.w500,
+              color: value == 'delete' ? color : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (people.isEmpty) {
-      return Center(
-        child: Text(
-          AppLocalizations.of(context).noEntriesForThisDay,
-          style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
-        ),
+      return EmptyState(
+        icon: Icons.event_busy_outlined,
+        message: AppLocalizations.of(context).noEntriesForThisDay,
       );
     }
 
-    final bodyFontSize = Responsive.of(context).bodyFontSize;
-    final iconSize = Responsive.of(context).iconSize();
+    final responsive = Responsive.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final bodyFontSize = responsive.bodyFontSize;
+    final iconSize = responsive.iconSize();
+    final categoryIcons = {
+      for (final option in getCategoryOptions(context)) option.category.name: option.icon,
+    };
 
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: Responsive.of(context).buttonHeight + 60),
+      padding: EdgeInsets.fromLTRB(
+        responsive.listPadding.horizontal,
+        0,
+        responsive.listPadding.horizontal,
+        responsive.buttonHeight + 60,
+      ),
       itemCount: people.length,
       itemBuilder: (context, index) {
         final person = people[index];
         final isSelected = selectedPeople.contains(person);
 
         return Card(
-          color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+          color: isSelected ? scheme.primary.withValues(alpha: 0.1) : null,
+          clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             side:
                 isSelected
-                    ? BorderSide(color: Theme.of(context).primaryColor, width: 2)
+                    ? BorderSide(color: scheme.primary, width: 2)
                     : BorderSide.none,
-            borderRadius: Responsive.of(context).cardBorderRadius,
+            borderRadius: responsive.cardBorderRadius,
           ),
           child: InkWell(
             onTap: isEditMode ? () => onToggleSelection(person) : null,
             child: Padding(
-              padding: Responsive.of(context).contentPadding,
+              padding: responsive.contentPadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
+                      CircleAvatar(
+                        radius: responsive.isTablet ? 24 : 18,
+                        backgroundColor: scheme.primary.withValues(alpha: 0.15),
+                        foregroundColor: scheme.primary,
+                        child: Text(
+                          person.name.isEmpty ? '?' : person.name.characters.first.toUpperCase(),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: bodyFontSize),
+                        ),
+                      ),
+                      SizedBox(width: responsive.isTablet ? 16 : 12),
                       Expanded(
                         child: Text(
                           person.name,
@@ -613,6 +670,11 @@ class _PersonList extends StatelessWidget {
                   ...person.records.map(
                     (record) => ListTile(
                       contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        categoryIcons[record.category] ?? Icons.label_outline,
+                        color: scheme.primary,
+                        size: iconSize,
+                      ),
                       title: Text(
                         localizedCategoryLabel(context, record.category),
                         style: TextStyle(fontSize: bodyFontSize),
@@ -626,25 +688,27 @@ class _PersonList extends StatelessWidget {
                               ? null
                               : PopupMenuButton<String>(
                                 icon: Icon(Icons.more_vert, size: iconSize),
+                                position: PopupMenuPosition.under,
                                 onSelected: (val) {
                                   if (val == 'edit') onEditCategory(record);
                                   if (val == 'delete') onDeleteCategory(record);
                                 },
                                 itemBuilder:
                                     (ctx) => [
-                                      PopupMenuItem(
+                                      _menuItem(
+                                        context,
                                         value: 'edit',
-                                        child: Text(
-                                          AppLocalizations.of(context).edit,
-                                          style: TextStyle(fontSize: bodyFontSize),
-                                        ),
+                                        icon: Icons.edit_outlined,
+                                        label: AppLocalizations.of(context).edit,
+                                        color: scheme.primary,
                                       ),
-                                      PopupMenuItem(
+                                      const PopupMenuDivider(height: 1),
+                                      _menuItem(
+                                        context,
                                         value: 'delete',
-                                        child: Text(
-                                          AppLocalizations.of(context).delete,
-                                          style: TextStyle(fontSize: bodyFontSize),
-                                        ),
+                                        icon: Icons.delete_outline,
+                                        label: AppLocalizations.of(context).delete,
+                                        color: scheme.error,
                                       ),
                                     ],
                               ),
@@ -652,12 +716,13 @@ class _PersonList extends StatelessWidget {
                   ),
                   if (!isEditMode)
                     Center(
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.add_circle_outline,
-                          size: Responsive.of(context).iconSize(baseSize: 32),
+                      child: TextButton.icon(
+                        icon: Icon(Icons.add_circle_outline, size: iconSize),
+                        label: Text(
+                          AppLocalizations.of(context).addCategory,
+                          style: TextStyle(fontSize: bodyFontSize),
                         ),
-                        color: Theme.of(context).primaryColor,
+                        style: TextButton.styleFrom(foregroundColor: scheme.primary),
                         onPressed: () => onAddCategory(person),
                       ),
                     ),

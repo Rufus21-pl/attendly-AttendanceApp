@@ -1,6 +1,7 @@
 import 'package:attendly/app/shell/app_shell.dart';
 import 'package:attendly/app/shell/app_tab.dart';
 import 'package:attendly/data/database/app_database.dart';
+import 'package:attendly/data/tables/enums/category.dart';
 import 'package:attendly/l10n/app_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -162,6 +163,33 @@ void main() {
       await tester.pump();
       expect(find.text('Anna'), findsOneWidget);
       expect(find.text('Ben'), findsNothing);
+      await unmount(tester);
+    });
+
+    testWidgets('the daily log category chips filter the list and reset clears them',
+        (tester) async {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      await tester.runAsync(() async {
+        final anna = await addTestPerson(db, 'Anna');
+        final ben = await addTestPerson(db, 'Ben');
+        await addTestEntry(db, personId: anna, date: today, category: Category.open);
+        await addTestEntry(db, personId: ben, date: today, category: Category.offer);
+      });
+
+      await pumpShell(tester, AppTab.dailyLog);
+      await tester.tap(find.text(l10n.filterOptions));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, l10n.offers));
+      await settleStreams(tester);
+
+      expect(find.text('Anna'), findsNothing);
+      expect(find.text('Ben'), findsOneWidget);
+
+      await tester.tap(find.text(l10n.reset));
+      await settleStreams(tester);
+      expect(find.text('Anna'), findsOneWidget);
+      expect(find.text('Ben'), findsOneWidget);
       await unmount(tester);
     });
 

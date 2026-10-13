@@ -3,7 +3,6 @@ import 'package:attendly/data/tables/enums/category.dart';
 import 'package:attendly/features/daily_log/models/category_record.dart';
 import 'package:attendly/features/daily_log/pages/daily_entry_form_page.dart';
 import 'package:attendly/l10n/app_en.dart';
-import 'package:attendly/shared/options/category_option.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,9 +45,7 @@ void main() {
   }
 
   Future<void> chooseCategory(WidgetTester tester, String label) async {
-    await tester.tap(find.byType(DropdownMenu<CategoryOption>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(label).last);
+    await tester.tap(find.widgetWithText(ChoiceChip, label));
     await tester.pumpAndSettle();
   }
 
