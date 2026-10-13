@@ -75,8 +75,8 @@ class _WeekListPageState extends ConsumerState<WeekListPage> {
             if (weeksData.isEmpty) {
             return Center(
               child: Text(
-                'No weekly entries found.',
-                style: TextStyle(fontSize: isTablet ? 18 : 16, fontWeight: FontWeight.w500),
+                AppLocalizations.of(context).noWeeklyEntriesFound,
+                style: TextStyle(fontSize: isTablet ? 22 : 18, fontWeight: FontWeight.w500),
               )
             );
           }
