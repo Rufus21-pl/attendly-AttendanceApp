@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:attendly/shared/shell/shell_tab.dart';
 import 'package:attendly/shared/widgets/tab_app_bar.dart';
 import 'package:attendly/shared/widgets/chart_dialog.dart';
+import 'package:attendly/shared/widgets/empty_state.dart';
+import 'package:attendly/shared/widgets/section_header.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,11 +46,9 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
       error: (error, stack) => _buildErrorState(error, stack),
       data: (statsModel) {
         if (statsModel == null) {
-          return Center(
-            child: Text(
-              localizations.noDataForThisYear,
-              style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
-            ),
+          return EmptyState(
+            icon: Icons.insert_chart_outlined,
+            message: localizations.noDataForThisYear,
           );
         }
         return _buildReportView(statsModel);
@@ -197,28 +197,19 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
         padding: Responsive.of(context).contentPadding,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(icon,
-                color: Theme.of(context).primaryColor,
-                size: Responsive.of(context).iconSize()),
-            SizedBox(
-                width: Responsive.of(context).listPadding.horizontal),
-            Expanded(
-              child: Text(title,
-                  style: TextStyle(
-                      fontSize: Responsive.of(context).titleFontSize,
-                      fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2),
-            ),
-            if (showChart && data.isNotEmpty)
-              IconButton(
-                icon: Icon(Icons.pie_chart,
-                    size: Responsive.of(context).iconSize()),
-                onPressed: () => ChartDialog.show(context,
-                    title: title, data: data),
-              ),
-          ]),
+          SectionHeader(
+            icon: icon,
+            title: title,
+            trailing: showChart && data.isNotEmpty
+                ? IconButton(
+                    icon: Icon(Icons.pie_chart,
+                        size: Responsive.of(context).iconSize()),
+                    color: Theme.of(context).colorScheme.primary,
+                    onPressed: () => ChartDialog.show(context,
+                        title: title, data: data),
+                  )
+                : null,
+          ),
           if (children.isNotEmpty) ...[
             const Divider(height: 24),
             _buildHeaderRow(),
@@ -255,21 +246,7 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
         padding: Responsive.of(context).contentPadding,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(icon,
-                color: Theme.of(context).primaryColor,
-                size: Responsive.of(context).iconSize()),
-            SizedBox(
-                width: Responsive.of(context).listPadding.horizontal),
-            Expanded(
-              child: Text(title,
-                  style: TextStyle(
-                      fontSize: Responsive.of(context).titleFontSize,
-                      fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2),
-            ),
-          ]),
+          SectionHeader(icon: icon, title: title),
           const Divider(height: 24),
           _buildHeaderRow(),
           _buildMigrationGenderRow(
@@ -320,6 +297,7 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
             child: IconButton(
               icon: Icon(Icons.pie_chart,
                   size: Responsive.of(context).iconSize()),
+              color: Theme.of(context).colorScheme.primary,
               onPressed: (withCount + withoutCount > 0)
                   ? () => ChartDialog.show(
                         context,
@@ -366,7 +344,7 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
             child: Center(
               child: Icon(Icons.groups_2_outlined,
                   size: Responsive.of(context).iconSize(baseSize: 35),
-                  color: Theme.of(context).primaryColor),
+                  color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ),
@@ -402,7 +380,7 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
               style: TextStyle(
                   fontSize: body,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor)),
+                  color: Theme.of(context).colorScheme.primary)),
         ),
         Expanded(
           flex: 2,
