@@ -98,6 +98,26 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('the weekly report keeps its week when the tab is left', (tester) async {
+      await pumpShell(tester, AppTab.weeklyReport);
+      final weekText = find.textContaining(' - ');
+      final currentWeek = tester.widget<Text>(weekText).data;
+
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_sharp));
+      await tester.pumpAndSettle();
+      final previousWeek = tester.widget<Text>(weekText).data;
+      expect(previousWeek, isNot(currentWeek));
+
+      for (final title in [l10n.dailyLogs, l10n.weeklyReport]) {
+        await tester.tap(find.byIcon(Icons.menu));
+        await tester.pumpAndSettle();
+        await tester.tap(find.descendant(of: find.byType(Drawer), matching: find.text(title)));
+        await tester.pumpAndSettle();
+      }
+      expect(tester.widget<Text>(weekText).data, previousWeek);
+      await unmount(tester);
+    });
+
     testWidgets('a tablet shows the rail next to the tab', (tester) async {
       await pumpShell(tester, AppTab.directory, tablet: true);
 
