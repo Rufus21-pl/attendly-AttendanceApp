@@ -572,6 +572,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get newYearAvailable => 'New Database for new year available';
   @override
+  String get newYearBannerHint => 'Tap to set up the new year';
+  @override
+  String get mainDatabase => 'Main database';
+  @override
+  String get otherDatabaseOpen => 'Other database';
+  @override
   String get tapToCreateNewYearDatabase => 'Tap to create new year database';
 
   @override

@@ -261,6 +261,9 @@ abstract class AppLocalizations {
   String get continueCurrent;
   String get later;
   String get newYearAvailable;
+  String get newYearBannerHint;
+  String get mainDatabase;
+  String get otherDatabaseOpen;
   String get tapToCreateNewYearDatabase;
 
   String get saveDatabaseAs;
