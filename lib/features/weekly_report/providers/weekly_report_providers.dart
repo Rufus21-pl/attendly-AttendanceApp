@@ -20,8 +20,9 @@ final allWeeksProvider = StreamProvider.autoDispose<List<WeeklyEntryData>>((ref)
 });
 
 /// Monday of the week shown in the weekly report: the current week, or the
-/// first week of an older database's year. Resets when the tab is left.
-final selectedWeekProvider = StateProvider.autoDispose<DateTime>((ref) {
+/// first week of an older database's year. Kept when the tab is left, like
+/// the daily tab's date; resets when another database year is opened.
+final selectedWeekProvider = StateProvider<DateTime>((ref) {
   final dbYear = ref.watch(databaseProvider.select((s) => s.dbYear));
   return getFirstDateOfWeek(getScopedDate(dbYear: dbYear));
 });
