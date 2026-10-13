@@ -9,6 +9,7 @@ import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/directory/widgets/person_form_fields.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
+import 'package:attendly/shared/widgets/form_actions.dart';
 import 'package:attendly/shared/widgets/tablet_date_picker_builder.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -37,8 +38,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _birthdayController = TextEditingController();
-  final TextEditingController _genderController = TextEditingController();
-  final TextEditingController _migrationController = TextEditingController();
   final TextEditingController _homeCountryController = TextEditingController();
 
   final FocusNode _nameFocusNode = FocusNode();
@@ -75,8 +74,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     _nameFocusNode.dispose();
     _nameController.dispose();
     _birthdayController.dispose();
-    _genderController.dispose();
-    _migrationController.dispose();
     _homeCountryController.dispose();
     super.dispose();
   }
@@ -124,14 +121,12 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       _nameController.clear();
       _birthdayController.clear();
       _homeCountryController.clear();
-      _genderController.clear();
-      _migrationController.clear();
       _birthday = null;
       _gender = null;
       _migration = null;
     });
 
-    AppDialogs.showSnack(context, AppLocalizations.of(context).allFieldsReset);
+    AppDialogs.showSnack(context, AppLocalizations.of(context).allFieldsReset, icon: Icons.refresh);
   }
 
   Future<void> _pickBirthday() async {
@@ -284,7 +279,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     final responsive = Responsive.of(context);
     final isTablet = responsive.isTablet;
     final padding = responsive.contentPadding;
-    final buttonPadding = EdgeInsets.symmetric(vertical: padding.vertical / 2);
 
     final title = switch (widget.mode) {
       PersonFormMode.add => localizations.addPersonToTable,
@@ -330,8 +324,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
                 PersonFormFields(
                   nameController: _nameController,
                   birthdayController: _birthdayController,
-                  genderController: _genderController,
-                  migrationController: _migrationController,
                   homeCountryController: _homeCountryController,
                   gender: _gender,
                   migration: _migration,
@@ -341,25 +333,11 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
                   nameFocusNode: _nameFocusNode,
                   nameError: _takenName == null ? null : localizations.personNamedAlreadyExists(_takenName!),
                 ),
-                SizedBox(height: isTablet ? 70 : 60),
-                if (widget.mode == PersonFormMode.add) ...[
-                  OutlinedButton.icon(
-                    onPressed: _resetFields,
-                    icon: Icon(Icons.refresh, size: responsive.iconSize(baseSize: 26)),
-                    label: Text(localizations.reset, style: TextStyle(fontSize: responsive.bodyFontSize)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                      side: BorderSide(color: Theme.of(context).primaryColor),
-                      padding: buttonPadding,
-                    ),
-                  ),
-                  SizedBox(height: isTablet ? 20 : 16),
-                ],
-                ElevatedButton.icon(
-                  onPressed: _submit,
-                  icon: Icon(Icons.check, size: responsive.iconSize(baseSize: 28), color: Colors.white),
-                  label: Text(submitLabel, style: TextStyle(fontSize: responsive.bodyFontSize)),
-                  style: ElevatedButton.styleFrom(padding: buttonPadding),
+                SizedBox(height: isTablet ? 56 : 44),
+                FormActions(
+                  onReset: widget.mode == PersonFormMode.add ? _resetFields : null,
+                  onSubmit: _submit,
+                  submitLabel: submitLabel,
                 ),
                 SizedBox(height: MediaQuery.of(context).padding.bottom),
               ],
