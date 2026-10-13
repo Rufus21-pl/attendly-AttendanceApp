@@ -92,7 +92,9 @@ class PersonTile extends StatelessWidget {
           borderRadius: radius,
           side: isSelected
               ? BorderSide(color: theme.primaryColor, width: isTablet ? 2.0 : 1.5)
-              : BorderSide(color: Colors.grey.shade200, width: isTablet ? 1.5 : 1),
+              // dividerColor stays subtle in dark mode, where a light grey
+              // border glowed around every card.
+              : BorderSide(color: theme.dividerColor, width: isTablet ? 1.5 : 1),
         ),
         child: Column(
           children: [
