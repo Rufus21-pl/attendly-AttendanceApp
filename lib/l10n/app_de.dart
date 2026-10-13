@@ -555,6 +555,12 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get newYearAvailable => 'Neues Jahr verfügbar';
   @override
+  String get newYearBannerHint => 'Tippen, um das neue Jahr einzurichten';
+  @override
+  String get mainDatabase => 'Hauptdatenbank';
+  @override
+  String get otherDatabaseOpen => 'Andere Datenbank';
+  @override
   String get tapToCreateNewYearDatabase => 'Tippen, um neue Jahresdatenbank zu erstellen';
 
   @override
