@@ -1,4 +1,5 @@
 import 'package:attendly/core/responsive/responsive.dart';
+import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/daily_log/models/category_record.dart';
@@ -43,6 +44,9 @@ class DailyLogTab extends ShellTab {
     final asyncFilteredData = ref.watch(dailyFilteredLogsProvider);
     final isEditMode = ref.watch(dailyEditModeProvider);
     final responsive = Responsive.of(context);
+    final selectedDate = ref.watch(dailyDateProvider);
+    final dbYear = ref.watch(databaseProvider.select((s) => s.dbYear));
+    final isOnToday = DateUtils.isSameDay(selectedDate, getScopedDate(dbYear: dbYear));
 
     // Grab the list if available to check lengths
     final visiblePeople = asyncFilteredData.valueOrNull ?? [];
@@ -57,6 +61,14 @@ class DailyLogTab extends ShellTab {
               )
               : DrawerMenuButton.forShell(context),
       actions: [
+        // Rebuilding the date provider returns to today (or to the first day
+        // of an older database's year).
+        if (!isEditMode && !isOnToday)
+          IconButton(
+            icon: Icon(Icons.today, size: responsive.iconSize(baseSize: 28)),
+            tooltip: AppLocalizations.of(context).jumpToToday,
+            onPressed: () => ref.invalidate(dailyDateProvider),
+          ),
         if (!isEditMode)
           IconButton(
             icon: Icon(Icons.edit, size: responsive.iconSize(baseSize: 30)),

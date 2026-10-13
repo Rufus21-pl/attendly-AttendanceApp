@@ -22,11 +22,26 @@ class WeeklyReportTab extends ShellTab {
   PreferredSizeWidget buildAppBar(BuildContext context, WidgetRef ref) {
     final selectedWeekDate = ref.watch(selectedWeekProvider);
     final asyncWeekData = ref.watch(weeklyReportProvider(selectedWeekDate));
+    final dbYear = ref.watch(databaseProvider.select((s) => s.dbYear));
+    final isOnCurrentWeek = DateUtils.isSameDay(
+      selectedWeekDate,
+      getFirstDateOfWeek(getScopedDate(dbYear: dbYear)),
+    );
 
     return TabAppBar(
       title: AppLocalizations.of(context).weeklyReport,
       leading: DrawerMenuButton.forShell(context),
-      actions: [_buildStatusWidget(context, asyncWeekData)],
+      actions: [
+        // Rebuilding the week provider returns to the current week (or to the
+        // first week of an older database's year).
+        if (!isOnCurrentWeek)
+          IconButton(
+            icon: Icon(Icons.today, size: Responsive.of(context).iconSize(baseSize: 28)),
+            tooltip: AppLocalizations.of(context).jumpToCurrentWeek,
+            onPressed: () => ref.invalidate(selectedWeekProvider),
+          ),
+        _buildStatusWidget(context, asyncWeekData),
+      ],
     );
   }
 

@@ -417,6 +417,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noEntriesForThisDay => 'No entries for this day';
   @override
+  String get jumpToToday => 'Jump to today';
+  @override
   String get id => 'ID';
   @override
   String get addCategory => 'Add Category';
@@ -492,6 +494,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectWeekHelpText => 'Select the start of the week (Monday)';
   @override
   String get noDataForThisWeek => 'No data for this week';
+  @override
+  String get jumpToCurrentWeek => 'Jump to the current week';
   @override
   String get weeksWithData => 'Weeks with Data';
   @override
