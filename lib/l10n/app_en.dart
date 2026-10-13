@@ -493,6 +493,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get selectWeekHelpText => 'Select the start of the week (Monday)';
   @override
+  String calendarWeek(int week, int year) => 'Week $week · $year';
+  @override
   String get noDataForThisWeek => 'No data for this week';
   @override
   String get jumpToCurrentWeek => 'Jump to the current week';
@@ -502,6 +504,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excludeFromYearReport => 'Exclude from year report';
   @override
   String get includeInYearReport => 'Include in year report';
+  @override
+  String get countedInYearReport => 'Counted in year report';
+  @override
+  String get notCountedInYearReport => 'Not counted in year report';
+  @override
+  String get selectedWeek => 'Selected';
   @override
   String get migrationBgAbbreviation => 'Migration Bg.';
   @override
