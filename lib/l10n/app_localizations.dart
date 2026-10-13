@@ -175,6 +175,7 @@ abstract class AppLocalizations {
   String get recordDeleted;
   String get failedToDeleteRecord;
   String get noEntriesForThisDay;
+  String get jumpToToday;
   String get id;
   String get addCategory;
   String get filterOptions;
@@ -217,6 +218,7 @@ abstract class AppLocalizations {
   String get showWeeksWithDataTooltip;
   String get selectWeekHelpText;
   String get noDataForThisWeek;
+  String get jumpToCurrentWeek;
   String get weeksWithData;
   String get excludeFromYearReport;
   String get includeInYearReport;
