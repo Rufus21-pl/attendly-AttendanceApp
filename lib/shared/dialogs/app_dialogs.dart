@@ -153,34 +153,63 @@ abstract final class AppDialogs {
   }
 
   /// Short grey snackbar, e.g. "All fields reset".
-  static void showSnack(BuildContext context, String message) {
+  /// Short floating message: an icon in a tinted circle next to the text, on
+  /// a dark pill that reads well in light and dark mode.
+  static void showSnack(
+    BuildContext context,
+    String message, {
+    IconData icon = Icons.info_outline,
+    Duration duration = const Duration(milliseconds: 1500),
+  }) {
     final responsive = Responsive.of(context);
     final isTablet = responsive.isTablet;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark ? Colors.grey.shade800 : const Color(0xFF2E2A36);
+    final accent = isDark ? scheme.primary : Colors.purple.shade100;
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Center(
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isTablet ? 24.0 * responsive.textScaleFactor : 20.0,
+        content: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(isTablet ? 8 : 6),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: accent, size: isTablet ? 28 : 20),
             ),
-          ),
+            SizedBox(width: isTablet ? 16 : 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: isTablet ? 20.0 * responsive.textScaleFactor : 16.0,
+                ),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.grey,
+        backgroundColor: background,
         behavior: SnackBarBehavior.floating,
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 20 : 14,
+          vertical: isTablet ? 14 : 10,
+        ),
         margin: EdgeInsets.only(
-          bottom: isTablet ? 16.0 : 10.0,
-          left: isTablet ? 40.0 : 25.0,
-          right: isTablet ? 40.0 : 25.0,
+          bottom: isTablet ? 24.0 : 16.0,
+          left: isTablet ? 40.0 : 16.0,
+          right: isTablet ? 40.0 : 16.0,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 10.0),
+          borderRadius: BorderRadius.circular(isTablet ? 20.0 : 16.0),
         ),
-        elevation: isTablet ? 6.0 : 5.0,
-        duration: const Duration(milliseconds: 1500),
+        elevation: 6.0,
+        duration: duration,
       ),
     );
   }
