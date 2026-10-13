@@ -16,8 +16,10 @@ class SettingsPage extends ConsumerWidget  {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context);
-    final iconSize = Responsive.of(context).iconSize();
+    final responsive = Responsive.of(context);
+    final iconSize = responsive.iconSize();
     final settings = ref.watch(settingsProvider);
+    final muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5);
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
@@ -28,7 +30,7 @@ class SettingsPage extends ConsumerWidget  {
           title: Text(
             localizations.settings,
             style: TextStyle(
-              fontSize: Responsive.of(context).titleFontSize,
+              fontSize: responsive.titleFontSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -38,9 +40,17 @@ class SettingsPage extends ConsumerWidget  {
           ),
         ),
         body: ListView(
+          padding: EdgeInsets.fromLTRB(
+            responsive.contentPadding.left,
+            responsive.listPadding.vertical,
+            responsive.contentPadding.right,
+            responsive.contentPadding.bottom + MediaQuery.of(context).padding.bottom,
+          ),
+          children: [
+            _SectionTitle(localizations.appearanceSection, isFirst: true),
+            _SettingsCard(
               children: [
-                _buildSettingsListTile(
-                  context: context,
+                _SettingsTile(
                   title: localizations.darkMode,
                   subtitle: localizations.enableDisableDarkTheme,
                   icon: Icons.dark_mode_outlined,
@@ -48,169 +58,152 @@ class SettingsPage extends ConsumerWidget  {
                     value: settings.themeMode == ThemeMode.dark,
                     onChanged: (bool value) {
                       ref.read(settingsProvider.notifier).updateTheme(value ? ThemeMode.dark : ThemeMode.light);
-                      ScaffoldMessenger.of(context)
-                      ..clearSnackBars()
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            value ? localizations.darkModeOn : localizations.darkModeOff,
-                            style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
-                          ),
-                        ),
+                      AppDialogs.showSnack(
+                        context,
+                        value ? localizations.darkModeOn : localizations.darkModeOff,
+                        icon: value ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
                       );
                     },
                   ),
                 ),
-                const Divider(height: 1),
-
-                _buildSettingsListTile(
-                  context: context,
+                _SettingsTile(
                   title: localizations.language,
                   subtitle: localizations.selectApplicationLanguage,
                   icon: Icons.language_outlined,
-                  trailing: DropdownButton<String>(
-                    value: settings.locale.languageCode == 'de'
-                        ? localizations.german
-                        : localizations.english,
-                    underline: const SizedBox(),
-                    style: TextStyle(
-                      fontSize: Responsive.of(context).bodyFontSize,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                    iconSize: Responsive.of(context).iconSize(),
-                    onChanged: (String? newValue) {
-                      if (newValue == null) return;
-                      final locale = newValue == localizations.german
-                        ? const Locale('de')
-                        : const Locale('en');
-                      ref.read(settingsProvider.notifier).updateLocale(locale);
-
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        final newLoc = AppLocalizations.of(context);
-                        ScaffoldMessenger.of(context)
-                          ..removeCurrentSnackBar()
-                          ..showSnackBar(SnackBar(
-                            content: Text(
-                              '${newLoc.languageSetTo} $newValue. ${newLoc.appRestartRequired}',
-                              style: TextStyle(
-                                  fontSize: Responsive.of(context).bodyFontSize),
-                            ),
-                          ));
-                      });
-                    },
-                    items: [localizations.english, localizations.german]
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value,
-                          style: TextStyle(fontSize: Responsive.of(context).bodyFontSize),
+                  below: SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<String>(
+                      segments: [
+                        ButtonSegment(
+                          value: 'en',
+                          label: Text(localizations.english, style: TextStyle(fontSize: responsive.bodyFontSize - 2)),
                         ),
-                      );
-                    }).toList(),
+                        ButtonSegment(
+                          value: 'de',
+                          label: Text(localizations.german, style: TextStyle(fontSize: responsive.bodyFontSize - 2)),
+                        ),
+                      ],
+                      selected: {settings.locale.languageCode == 'de' ? 'de' : 'en'},
+                      showSelectedIcon: false,
+                      onSelectionChanged: (selection) {
+                        final languageCode = selection.first;
+                        final newValue = languageCode == 'de' ? localizations.german : localizations.english;
+                        ref.read(settingsProvider.notifier).updateLocale(Locale(languageCode));
+
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final newLoc = AppLocalizations.of(context);
+                          AppDialogs.showSnack(
+                            context,
+                            '${newLoc.languageSetTo} $newValue. ${newLoc.appRestartRequired}',
+                            icon: Icons.translate,
+                            duration: const Duration(seconds: 3),
+                          );
+                        });
+                      },
+                    ),
                   ),
                 ),
-                const Divider(height: 1),
+              ],
+            ),
 
-                _buildSettingsListTile(
-                  context: context,
+            _SectionTitle(localizations.dataSection),
+            _SettingsCard(
+              children: [
+                _SettingsTile(
                   title: localizations.recalibrateData,
                   subtitle: localizations.recalibrateDataDesc,
                   icon: Icons.calculate_outlined,
-                  trailing: Icon(Icons.chevron_right, size: Responsive.of(context).iconSize()),
-                  onTap: () => _showRecalibrationDialog(context, ref)
+                  trailing: Icon(Icons.chevron_right, size: iconSize),
+                  onTap: () => _showRecalibrationDialog(context, ref),
                 ),
-                const Divider(height: 1),
-                _buildSettingsListTile(
-                  context: context,
+                _SettingsTile(
                   title: localizations.help,
                   subtitle: localizations.openUserManual,
                   icon: Icons.help_outline,
-                  trailing: Icon(Icons.chevron_right, size: Responsive.of(context).iconSize()),
+                  trailing: Icon(Icons.chevron_right, size: iconSize),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) =>
                         HelpPage(),
                   )),
                 ),
-                const Divider(height: 1),
-                Padding(
-                  padding: Responsive.of(context).contentPadding,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          localizations.debugInformation,
-                          style: TextStyle(
-                            fontSize: Responsive.of(context).bodyFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    GestureDetector(
-                      onLongPress: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const DebugMenuPage()),
-                      ),
-                      child: Icon(
-                          Icons.info_outline, 
-                          color: Colors.grey,
-                          size: iconSize,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: Responsive.of(context).contentPadding,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            FutureBuilder<PackageInfo>(
-                              future: PackageInfo.fromPlatform(),
-                              builder: (context, snapshot) {
-                                final version =
-                                    snapshot.hasData ? snapshot.data!.version : '...';
-                                return InkWell(
-                                  onTap: () => ChangelogDialog.showDirectly(context),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                    child: Text(
-                                      localizations.getAppsVerision(version),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: Responsive.of(context).bodyFontSize,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const _SchemaVersionText(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-
-                // _buildSettingsListTile(
-                //   context: context,
-                //   title: "Test 2025 Migration",
-                //   subtitle: "Verify db_2025.db conversion logic",
-                //   icon: Icons.auto_fix_high_outlined,
-                //   trailing: Icon(Icons.play_arrow, color: Colors.green, size: Responsive.of(context).iconSize()),
-                //   onTap: _runMigrationTest,
-                // ),
               ],
-            )
-        )
-      );
+            ),
+
+            _SectionTitle(localizations.aboutSection),
+            _SettingsCard(
+              children: [
+                Padding(
+                  padding: responsive.contentPadding,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              localizations.debugInformation,
+                              style: TextStyle(
+                                fontSize: responsive.bodyFontSize,
+                                fontWeight: FontWeight.bold,
+                                color: muted,
+                              ),
+                            ),
+                          ),
+                          // Long press opens the hidden debug menu.
+                          GestureDetector(
+                            onLongPress: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const DebugMenuPage()),
+                            ),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: muted,
+                              size: iconSize,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: responsive.listPadding.vertical * 2),
+                      FutureBuilder<PackageInfo>(
+                        future: PackageInfo.fromPlatform(),
+                        builder: (context, snapshot) {
+                          final version =
+                              snapshot.hasData ? snapshot.data!.version : '...';
+                          return InkWell(
+                            onTap: () => ChangelogDialog.showDirectly(context),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                              child: Text(
+                                localizations.getAppsVerision(version),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: responsive.bodyFontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: muted,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const _SchemaVersionText(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // _buildSettingsListTile(
+            //   context: context,
+            //   title: "Test 2025 Migration",
+            //   subtitle: "Verify db_2025.db conversion logic",
+            //   icon: Icons.auto_fix_high_outlined,
+            //   trailing: Icon(Icons.play_arrow, color: Colors.green, size: Responsive.of(context).iconSize()),
+            //   onTap: _runMigrationTest,
+            // ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _showRecalibrationDialog(
@@ -267,29 +260,137 @@ class SettingsPage extends ConsumerWidget  {
       }
     }
   }
+}
 
-  Widget _buildSettingsListTile({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Widget trailing,
-    VoidCallback? onTap,
-  }) {
-    return ListTile(
-      contentPadding: Responsive.of(context).contentPadding,
-      leading: Icon(icon, size: Responsive.of(context).iconSize()),
-      title: Text(title,
-          style: TextStyle(
-              fontSize: Responsive.of(context).bodyFontSize,
-              fontWeight: FontWeight.w500)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2.0),
-        child: Text(subtitle,
-            style: TextStyle(fontSize: Responsive.of(context).bodyFontSize)),
+/// Small coloured heading above a group of settings.
+class _SectionTitle extends StatelessWidget {
+  final String text;
+
+  /// The first heading sits close to the app bar.
+  final bool isFirst;
+
+  const _SectionTitle(this.text, {this.isFirst = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final responsive = Responsive.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8, isFirst ? 0 : responsive.listPadding.vertical * 4, 8, 8),
+      child: Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          fontSize: responsive.smallFontSize + 1,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.1,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
-      trailing: trailing,
+    );
+  }
+}
+
+/// Rounded card around a group of settings, with dividers between them.
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final responsive = Responsive.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: responsive.cardBorderRadius,
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A setting: icon in a tinted square, title and description, and either a
+/// [trailing] control or a full-width control [below] the text.
+class _SettingsTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Widget? trailing;
+  final Widget? below;
+  final VoidCallback? onTap;
+
+  const _SettingsTile({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.trailing,
+    this.below,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final responsive = Responsive.of(context);
+    final scheme = Theme.of(context).colorScheme;
+
+    return InkWell(
       onTap: onTap,
+      child: Padding(
+        padding: responsive.contentPadding,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(responsive.isTablet ? 10 : 8),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: responsive.iconSize(baseSize: 22), color: scheme.primary),
+                ),
+                SizedBox(width: responsive.isTablet ? 16 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(fontSize: responsive.bodyFontSize, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: responsive.bodyFontSize - 3,
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
+                ],
+              ],
+            ),
+            if (below != null) ...[
+              SizedBox(height: responsive.listPadding.vertical * 3),
+              below!,
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
