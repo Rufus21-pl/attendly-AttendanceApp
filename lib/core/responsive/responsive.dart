@@ -38,5 +38,5 @@ class Responsive {
 
   double get cardElevation => isTablet ? 4.0 : 2.0;
 
-  BorderRadius get cardBorderRadius => BorderRadius.circular(isTablet ? 16.0 : 12.0);
+  BorderRadius get cardBorderRadius => BorderRadius.circular(isTablet ? 20.0 : 16.0);
 }
