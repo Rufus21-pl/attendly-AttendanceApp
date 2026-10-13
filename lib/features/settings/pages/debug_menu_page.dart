@@ -101,10 +101,7 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
         : _settingsContent;
 
     Clipboard.setData(ClipboardData(text: contentToCopy));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(localizations.settingsCopiedToClipboard)),
-    );
+    AppDialogs.showSnack(context, localizations.settingsCopiedToClipboard, icon: Icons.copy);
   }
 
   void _copyLogsToClipboard() {
@@ -113,9 +110,7 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
     final logs = AppLogger.recentLines.join('\n');
 
     Clipboard.setData(ClipboardData(text: path != null ? 'Log file: $path\n\n$logs' : logs));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(localizations.logsCopiedToClipboard)),
-    );
+    AppDialogs.showSnack(context, localizations.logsCopiedToClipboard, icon: Icons.copy);
   }
 
   @override
@@ -123,7 +118,10 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
     final localizations = AppLocalizations.of(context);
     final iconSize = Responsive.of(context).iconSize();
     // Read the active db state from AppState
-    final appState = ref.watch(databaseProvider); 
+    final appState = ref.watch(databaseProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final boxColor = isDark ? Colors.grey.shade900 : Colors.grey.shade100;
+    final boxBorder = isDark ? Colors.grey.shade700 : Colors.grey.shade300;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
@@ -193,7 +191,7 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
                   padding:
                       Responsive.of(context).contentPadding,
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: isDark ? Colors.red.shade900.withValues(alpha: 0.3) : Colors.red.shade50,
                     border: Border.all(color: Colors.red.shade200),
                     borderRadius:
                         Responsive.of(context).cardBorderRadius,
@@ -228,9 +226,9 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
                       padding:
                           Responsive.of(context).contentPadding,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: boxColor,
                         border:
-                            Border.all(color: Colors.grey.shade300),
+                            Border.all(color: boxBorder),
                         borderRadius:
                             Responsive.of(context).cardBorderRadius,
                       ),
@@ -285,8 +283,8 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
                 height: Responsive.of(context).isTablet ? 400 : 300,
                 padding: Responsive.of(context).contentPadding,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  border: Border.all(color: Colors.grey.shade300),
+                  color: boxColor,
+                  border: Border.all(color: boxBorder),
                   borderRadius:
                       Responsive.of(context).cardBorderRadius,
                 ),
@@ -296,7 +294,7 @@ class _DebugMenuPageState extends ConsumerState<DebugMenuPage> {
                     AppLogger.recentLines.join('\n'),
                     style: TextStyle(
                       fontFamily: 'monospace',
-                      color: Colors.black87,
+                      color: isDark ? Colors.grey.shade300 : Colors.black87,
                       fontSize:
                           Responsive.of(context).bodyFontSize - 8,
                     ),
@@ -405,7 +403,7 @@ class _TestDataSectionState extends ConsumerState<_TestDataSection> {
     setState(() => _isBusy = true);
     try {
       final message = await action(TestPeopleSeeder(ref.read(appDatabaseProvider)));
-      if (mounted) AppDialogs.showSnack(context, message);
+      if (mounted) AppDialogs.showSnack(context, message, icon: Icons.science_outlined);
     } catch (e, stackTrace) {
       AppLogger.e('Debug', 'Test data action failed', e, stackTrace);
       if (mounted) AppDialogs.showError(context, e.toString(), stackTrace: stackTrace);
