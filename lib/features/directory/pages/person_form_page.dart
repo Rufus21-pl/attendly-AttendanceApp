@@ -38,8 +38,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _birthdayController = TextEditingController();
-  final TextEditingController _genderController = TextEditingController();
-  final TextEditingController _migrationController = TextEditingController();
   final TextEditingController _homeCountryController = TextEditingController();
 
   final FocusNode _nameFocusNode = FocusNode();
@@ -76,8 +74,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     _nameFocusNode.dispose();
     _nameController.dispose();
     _birthdayController.dispose();
-    _genderController.dispose();
-    _migrationController.dispose();
     _homeCountryController.dispose();
     super.dispose();
   }
@@ -125,8 +121,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       _nameController.clear();
       _birthdayController.clear();
       _homeCountryController.clear();
-      _genderController.clear();
-      _migrationController.clear();
       _birthday = null;
       _gender = null;
       _migration = null;
@@ -330,8 +324,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
                 PersonFormFields(
                   nameController: _nameController,
                   birthdayController: _birthdayController,
-                  genderController: _genderController,
-                  migrationController: _migrationController,
                   homeCountryController: _homeCountryController,
                   gender: _gender,
                   migration: _migration,
