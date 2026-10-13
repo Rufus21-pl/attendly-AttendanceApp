@@ -6,6 +6,7 @@ import 'package:attendly/app/startup/app_startup_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/core/responsive/responsive.dart';
+import 'package:attendly/shared/widgets/empty_state.dart';
 
 class DatabasePickerPage extends ConsumerStatefulWidget {
   // Add a field to hold the path of the currently active database.
@@ -63,36 +64,28 @@ class _DatabasePickerPageState extends ConsumerState<DatabasePickerPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
-                child: Text(
-                  localizations.errorLoadingFiles(snapshot.error.toString()),
-                  style: TextStyle(fontSize: isTablet ? 18.0 : 16.0),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+            return EmptyState(
+              icon: Icons.error_outline,
+              message: localizations.errorLoadingFiles(snapshot.error.toString()),
             );
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
-                child: Text(
-                  localizations.noDbFilesFound,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: isTablet ? 18.0 : 16.0),
-                ),
-              ),
+            return EmptyState(
+              icon: Icons.folder_off_outlined,
+              message: localizations.noDbFilesFound,
             );
           }
 
           final files = snapshot.data!;
+          final responsive = Responsive.of(context);
+          final scheme = Theme.of(context).colorScheme;
+          final muted = scheme.onSurface.withValues(alpha: 0.6);
+
           return ListView.builder(
             padding: EdgeInsets.symmetric(
-              vertical: Responsive.of(context).listPadding.vertical,
-              horizontal: Responsive.of(context).listPadding.horizontal,
+              vertical: responsive.listPadding.vertical * 2,
+              horizontal: responsive.listPadding.horizontal + 4,
             ),
             itemCount: files.length,
             itemBuilder: (context, index) {
@@ -101,42 +94,80 @@ class _DatabasePickerPageState extends ConsumerState<DatabasePickerPage> {
               final bool isCurrentDb = file.path == widget.currentDbPath;
 
               return Card(
-                elevation: Responsive.of(context).cardElevation,
-                margin: EdgeInsets.symmetric(
-                  horizontal: Responsive.of(context).listPadding.horizontal / 2,
-                  vertical: Responsive.of(context).listPadding.vertical / 2,
-                ),
+                elevation: isCurrentDb ? 0 : responsive.cardElevation,
+                margin: EdgeInsets.symmetric(vertical: responsive.listPadding.vertical * 1.5),
+                clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(
-                  borderRadius: Responsive.of(context).cardBorderRadius,
+                  borderRadius: responsive.cardBorderRadius,
+                  side: isCurrentDb
+                      ? BorderSide(color: Colors.green.shade600, width: isTablet ? 2 : 1.5)
+                      : BorderSide.none,
                 ),
-                color: isCurrentDb ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
-                child: ListTile(
-                  enabled: !isCurrentDb,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: Responsive.of(context).contentPadding.horizontal,
-                    vertical: Responsive.of(context).contentPadding.vertical / 2,
-                  ),
-                  leading: Icon(
-                    isCurrentDb ? Icons.check_circle : Icons.storage_rounded,
-                    color: isCurrentDb ? Colors.green : Colors.blueGrey,
-                    size: iconSize,
-                  ),
-                  title: Text(
-                    fileName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: Responsive.of(context).bodyFontSize,
-                      color: isCurrentDb ? Colors.grey[600] : null,
-                    ),
-                  ),
-                  subtitle: Text(
-                    isCurrentDb ? localizations.currentlyLoaded : file.parent.path,
-                    style: TextStyle(
-                      fontSize: Responsive.of(context).bodyFontSize - 6,
-                      color: isCurrentDb ? Colors.grey[600] : null,
-                    ),
-                  ),
+                color: isCurrentDb ? Colors.green.withValues(alpha: 0.08) : null,
+                child: InkWell(
                   onTap: isCurrentDb ? null : () => _onFileSelected(file),
+                  child: Padding(
+                    padding: responsive.contentPadding,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: isTablet ? 28 : 22,
+                          backgroundColor: isCurrentDb
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : scheme.primary.withValues(alpha: 0.12),
+                          child: Icon(
+                            isCurrentDb ? Icons.check_circle : Icons.storage_rounded,
+                            color: isCurrentDb ? Colors.green.shade600 : scheme.primary,
+                            size: iconSize,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                fileName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: responsive.bodyFontSize,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (isCurrentDb)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(32),
+                                  ),
+                                  child: Text(
+                                    localizations.currentlyLoaded,
+                                    style: TextStyle(
+                                      fontSize: responsive.smallFontSize,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Text(
+                                  file.parent.path,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: responsive.bodyFontSize - 5,
+                                    color: muted,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (!isCurrentDb)
+                          Icon(Icons.chevron_right, color: muted, size: iconSize),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
