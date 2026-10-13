@@ -27,6 +27,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get selectApplicationLanguage => 'Anwendungssprache auswählen';
+  @override
+  String get appearanceSection => 'Darstellung';
+  @override
+  String get dataSection => 'Daten';
+  @override
+  String get aboutSection => 'Über die App';
 
   @override
   String get darkModeOn => 'Dunkelmodus ist eingeschaltet';

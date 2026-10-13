@@ -3,6 +3,7 @@ import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/l10n/app_localizations.dart';
+import 'package:attendly/shared/dialogs/app_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -198,9 +199,7 @@ class StartupDialogs {
               Clipboard.setData(ClipboardData(
                   text: 'settings.json:\n$jsonContent\n\n'
                       'Log file: ${logPath ?? 'not available'}\n$logs'));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(localizations.logsCopiedToClipboard)),
-              );
+              AppDialogs.showSnack(context, localizations.logsCopiedToClipboard, icon: Icons.copy);
             },
             child: Text(localizations.copyToClipboard,
                 style: TextStyle(fontSize: isTablet ? 18.0 : 16.0)),

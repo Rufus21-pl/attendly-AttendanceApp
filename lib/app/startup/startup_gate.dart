@@ -88,6 +88,7 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
       database.isTemporaryDb
           ? localizations.nowViewingDatabase(year)
           : localizations.backToCurrentDatabase(year),
+      icon: Icons.storage,
     );
   }
 
