@@ -496,6 +496,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get searchByNameAndDescription => 'Name & Beschreibung';
   @override
   String get searchIn => 'Suchen in';
+  @override
+  String get searchHint => 'Durchsuche die täglichen Logs nach Name, Beschreibung oder Kategorie.';
 
   // For debug menu
   @override

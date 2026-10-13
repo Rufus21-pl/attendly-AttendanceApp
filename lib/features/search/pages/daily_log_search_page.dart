@@ -7,6 +7,8 @@ import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/features/daily_log/providers/daily_log_providers.dart';
 import 'package:attendly/core/logging/app_logger.dart';
+import 'package:attendly/shared/widgets/choice_chip_group.dart';
+import 'package:attendly/shared/widgets/empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,10 +28,12 @@ class DailyLogSearchPage extends ConsumerStatefulWidget {
 class _DailyLogSearchPageState extends ConsumerState<DailyLogSearchPage> {
   final _nameSearchController = TextEditingController();
   final _descriptionSearchController = TextEditingController();
-  final _categoryController = TextEditingController();
   String? _selectedCategory;
   bool _isLoading = false;
   Map<String, List<CategoryRecord>> _groupedResults = {};
+
+  /// Before the first search the empty list shows a hint, not "no results".
+  bool _hasSearched = false;
   Set<SearchType> _selectedSearchType = {SearchType.name};
 
   late DailyRepository _repo;
@@ -46,7 +50,6 @@ class _DailyLogSearchPageState extends ConsumerState<DailyLogSearchPage> {
   void dispose() {
     _nameSearchController.dispose();
     _descriptionSearchController.dispose();
-    _categoryController.dispose();
     super.dispose();
   }
 
@@ -55,6 +58,7 @@ class _DailyLogSearchPageState extends ConsumerState<DailyLogSearchPage> {
     FocusScope.of(context).unfocus();
     setState(() {
       _isLoading = true;
+      _hasSearched = true;
       _groupedResults = {};
     });
 
@@ -110,16 +114,150 @@ class _DailyLogSearchPageState extends ConsumerState<DailyLogSearchPage> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final iconSize = Responsive.of(context).iconSize();
-    final bodySize = Responsive.of(context).bodyFontSize;
-    final isTablet = Responsive.of(context).isTablet;
+    final responsive = Responsive.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final iconSize = responsive.iconSize();
+    final bodySize = responsive.bodyFontSize;
+    final searchType = _selectedSearchType.first;
+    final showName = searchType == SearchType.name || searchType == SearchType.nameAndDescription;
+    final showDescription =
+        searchType == SearchType.description || searchType == SearchType.nameAndDescription;
+    final gap = SizedBox(height: responsive.listPadding.vertical * 3);
+    final sideInset = responsive.contentPadding.left + 4;
+
+    Widget sectionLabel(String text) => Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            text,
+            style: TextStyle(fontSize: bodySize - 2, fontWeight: FontWeight.w600),
+          ),
+        );
+
+    InputDecoration fieldDecoration({
+      required String label,
+      required IconData icon,
+      required TextEditingController controller,
+    }) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(fontSize: bodySize),
+        prefixIcon: Icon(icon, size: iconSize, color: scheme.primary),
+        suffixIcon: controller.text.isNotEmpty
+            ? IconButton(
+                icon: Icon(Icons.clear, size: iconSize),
+                onPressed: () => controller.clear(),
+              )
+            : null,
+        border: OutlineInputBorder(borderRadius: responsive.cardBorderRadius),
+        contentPadding: responsive.contentPadding,
+      );
+    }
+
+    final form = Padding(
+      padding: EdgeInsets.fromLTRB(sideInset, responsive.contentPadding.top, sideInset, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          sectionLabel(localizations.searchIn),
+          // A search field is always needed, so the selected chip cannot be cleared.
+          ChoiceChipGroup<SearchType>(
+            choices: [
+              (value: SearchType.name, label: localizations.name, icon: Icons.person_search),
+              (value: SearchType.description, label: localizations.searchByDescription, icon: Icons.description_outlined),
+              (value: SearchType.nameAndDescription, label: localizations.searchByNameAndDescription, icon: Icons.find_in_page_outlined),
+            ],
+            selected: searchType,
+            onChanged: (value) {
+              if (value != null) setState(() => _selectedSearchType = {value});
+            },
+          ),
+          gap,
+          if (showName)
+            TextField(
+              controller: _nameSearchController,
+              style: TextStyle(fontSize: bodySize),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _performSearch(),
+              decoration: fieldDecoration(
+                label: localizations.searchByName,
+                icon: Icons.person_search,
+                controller: _nameSearchController,
+              ),
+            ),
+          if (showName && showDescription) SizedBox(height: responsive.listPadding.vertical * 2),
+          if (showDescription)
+            TextField(
+              controller: _descriptionSearchController,
+              style: TextStyle(fontSize: bodySize),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _performSearch(),
+              decoration: fieldDecoration(
+                label: localizations.searchByDescription,
+                icon: Icons.description_outlined,
+                controller: _descriptionSearchController,
+              ),
+            ),
+          gap,
+          sectionLabel(localizations.filterByCategory),
+          ChoiceChipGroup<String>(
+            choices: [
+              for (final option in getCategoryOptions(context))
+                (value: option.category.name, label: option.label, icon: option.icon),
+            ],
+            selected: _selectedCategory,
+            onChanged: (value) => setState(() => _selectedCategory = value),
+          ),
+          SizedBox(height: responsive.listPadding.vertical * 4),
+          ElevatedButton.icon(
+            onPressed: _performSearch,
+            icon: Icon(Icons.search, size: iconSize, color: Colors.white),
+            label: Text(
+              localizations.search,
+              style: TextStyle(fontSize: bodySize, fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, responsive.buttonHeight + 4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            ),
+          ),
+          SizedBox(height: responsive.listPadding.vertical * 3),
+          const Divider(),
+        ],
+      ),
+    );
+
+    final List<Widget> results;
+    if (_isLoading) {
+      results = [
+        const Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    } else if (_groupedResults.isEmpty) {
+      results = [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: EmptyState(
+            icon: _hasSearched ? Icons.search_off : Icons.manage_search,
+            message: _hasSearched ? localizations.noResultsFound : localizations.searchHint,
+          ),
+        ),
+      ];
+    } else {
+      final locale = Localizations.localeOf(context).toString();
+      results = [
+        for (final MapEntry(key: date, value: records) in _groupedResults.entries)
+          _buildDateGroup(date, records, locale, sideInset),
+      ];
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           localizations.searchDailyLog,
           style: TextStyle(
-            fontSize: Responsive.of(context).titleFontSize,
+            fontSize: responsive.titleFontSize,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -128,224 +266,100 @@ class _DailyLogSearchPageState extends ConsumerState<DailyLogSearchPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Column(
+      body: ListView(
+        padding: EdgeInsets.only(
+          bottom: responsive.contentPadding.bottom + MediaQuery.of(context).padding.bottom,
+        ),
+        children: [form, ...results],
+      ),
+    );
+  }
+
+  /// The entries of one day: a header with date, weekday and count, then a
+  /// card per entry. Tapping an entry opens that day in the daily log.
+  Widget _buildDateGroup(String date, List<CategoryRecord> records, String locale, double sideInset) {
+    final localizations = AppLocalizations.of(context);
+    final responsive = Responsive.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final bodySize = responsive.bodyFontSize;
+    final categoryIcons = {
+      for (final option in getCategoryOptions(context)) option.category.name: option.icon,
+    };
+
+    DateTime parsedDate = DateTime.parse(date);
+    String formattedDisplayDate = DateFormat('dd.MM.yyyy').format(parsedDate);
+    final weekday = DateFormat.EEEE(locale).format(parsedDate);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: sideInset),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(
-              Responsive.of(context).contentPadding.left + 12,
-              Responsive.of(context).contentPadding.top + 8,
-              Responsive.of(context).contentPadding.right + 12,
-              0,
+              4,
+              responsive.listPadding.vertical * 3,
+              4,
+              responsive.listPadding.vertical * 1.5,
             ),
-            child: Column(
+            child: Row(
               children: [
-                if (_selectedSearchType.first == SearchType.name ||
-                    _selectedSearchType.first == SearchType.nameAndDescription)
-                  TextField(
-                    controller: _nameSearchController,
-                    style: TextStyle(fontSize: bodySize),
-                    decoration: InputDecoration(
-                      labelText: localizations.searchByName,
-                      labelStyle: TextStyle(fontSize: bodySize),
-                      prefixIcon: Icon(Icons.person_search, size: iconSize),
-                      suffixIcon: _nameSearchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(Icons.clear, size: iconSize),
-                              onPressed: () => _nameSearchController.clear(),
-                            )
-                          : null,
-                      border: OutlineInputBorder(
-                        borderRadius: Responsive.of(context).cardBorderRadius,
-                      ),
-                      contentPadding: Responsive.of(context).contentPadding,
-                    ),
-                  ),
-                if (_selectedSearchType.first == SearchType.nameAndDescription)
-                  SizedBox(height: Responsive.of(context).listPadding.vertical * 2),
-                if (_selectedSearchType.first == SearchType.description ||
-                    _selectedSearchType.first == SearchType.nameAndDescription)
-                  TextField(
-                    controller: _descriptionSearchController,
-                    style: TextStyle(fontSize: bodySize),
-                    decoration: InputDecoration(
-                      labelText: localizations.searchByDescription,
-                      labelStyle: TextStyle(fontSize: bodySize),
-                      prefixIcon: Icon(Icons.description, size: iconSize),
-                      suffixIcon: _descriptionSearchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(Icons.clear, size: iconSize),
-                              onPressed: () => _descriptionSearchController.clear(),
-                            )
-                          : null,
-                      border: OutlineInputBorder(
-                        borderRadius: Responsive.of(context).cardBorderRadius,
-                      ),
-                      contentPadding: Responsive.of(context).contentPadding,
-                    ),
-                  ),
-                SizedBox(height: Responsive.of(context).listPadding.vertical * 2),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                      child: Text(
-                        localizations.searchIn,
-                        style: TextStyle(fontSize: bodySize - 2, color: Theme.of(context).hintColor),
-                      ),
-                    ),
-                    SegmentedButton<SearchType>(
-                      segments: <ButtonSegment<SearchType>>[
-                        ButtonSegment<SearchType>(
-                          value: SearchType.name,
-                          label: Text(localizations.name, style: TextStyle(fontSize: bodySize - 2)),
-                          icon: const Icon(Icons.person_search),
-                        ),
-                        ButtonSegment<SearchType>(
-                          value: SearchType.description,
-                          label: Text(localizations.searchByDescription, style: TextStyle(fontSize: bodySize - 2)),
-                          icon: const Icon(Icons.description),
-                        ),
-                        ButtonSegment<SearchType>(
-                          value: SearchType.nameAndDescription,
-                          label: Text(localizations.searchByNameAndDescription, style: TextStyle(fontSize: bodySize - 2)),
-                          icon: const Icon(Icons.find_in_page),
-                        ),
-                      ],
-                      selected: _selectedSearchType,
-                      onSelectionChanged: (Set<SearchType> newSelection) {
-                        setState(() {
-                          _selectedSearchType = newSelection;
-                        });
-                      },
-                      multiSelectionEnabled: false,
-                      showSelectedIcon: false,
-                    ),
-                  ],
+                Icon(Icons.event_outlined, color: scheme.primary, size: responsive.iconSize(baseSize: 22)),
+                const SizedBox(width: 8),
+                Text(
+                  formattedDisplayDate,
+                  style: TextStyle(fontSize: responsive.titleFontSize, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: Responsive.of(context).listPadding.vertical * 2),
-                DropdownMenu<CategoryOption?>(
-                  controller: _categoryController,
-                  // width: MediaQuery.of(context).size.width - (Responsive.of(context).contentPadding.horizontal * 2),
-                  expandedInsets: EdgeInsets.zero,
-                  menuHeight: isTablet ? 300 : 250,
-                  enableFilter: true,
-                  requestFocusOnTap: false,
-                  textStyle: TextStyle(fontSize: bodySize),
-                  label: Text(
-                    localizations.filterByCategory,
-                    style: TextStyle(fontSize: bodySize, fontWeight: FontWeight.w500),
-                  ),
-                  onSelected: (item) => setState(() => _selectedCategory = item?.category.name),
-                  dropdownMenuEntries: getCategoryOptions(context)
-                      .map<DropdownMenuEntry<CategoryOption?>>((CategoryOption item) {
-                    return DropdownMenuEntry<CategoryOption?>(
-                      value: item,
-                      label: item.label,
-                      leadingIcon: item.icon != null ? Icon(item.icon, size: iconSize) : null,
-                      style: MenuItemButton.styleFrom(
-                        textStyle: TextStyle(fontSize: bodySize),
-                      ),
-                    );
-                  }).toList(),
-                  inputDecorationTheme: InputDecorationTheme(
-                    border: OutlineInputBorder(
-                      borderRadius: Responsive.of(context).cardBorderRadius,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    weekday,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: bodySize - 2,
+                      color: scheme.onSurface.withValues(alpha: 0.6),
                     ),
-                    contentPadding: Responsive.of(context).contentPadding,
                   ),
-                  trailingIcon: _selectedCategory != null
-                      ? IconButton(
-                          icon: Icon(Icons.clear, size: iconSize),
-                          onPressed: () => setState(() {
-                            _selectedCategory = null;
-                            _categoryController.clear();
-                          }),
-                        )
-                      : null,
                 ),
-                SizedBox(height: Responsive.of(context).listPadding.vertical * 2.5),
-                ElevatedButton.icon(
-                  onPressed: _performSearch,
-                  icon: Icon(Icons.search, size: iconSize, color: Colors.white),
-                  label: Text(localizations.search, style: TextStyle(fontSize: bodySize)),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, Responsive.of(context).buttonHeight),
-                    padding: EdgeInsets.symmetric(vertical: Responsive.of(context).contentPadding.vertical / 2),
-                  ),
+                Badge(
+                  label: Text('${records.length}'),
+                  backgroundColor: scheme.primary,
+                  textColor: scheme.onPrimary,
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _groupedResults.isEmpty
-                    ? SizedBox(
-                        width: double.infinity,
-                        child: Center(
-                          child: Text(
-                            localizations.noResultsFound,
-                            textAlign: TextAlign.center, 
-                            style: TextStyle(fontSize: bodySize),
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: Responsive.of(context).contentPadding.left + 12,
-                          vertical: Responsive.of(context).listPadding.vertical,
-                        ),
-                        itemCount: _groupedResults.keys.length,
-                        itemBuilder: (context, index) {
-                          final date = _groupedResults.keys.elementAt(index);
-                          final records = _groupedResults[date]!;
-
-                          DateTime parsedDate = DateTime.parse(date);
-                          String formattedDisplayDate = DateFormat('dd.MM.yyyy').format(parsedDate);
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: Responsive.of(context).listPadding.vertical,
-                                  horizontal: 8.0,
-                                ),
-                                child: Text(
-                                  formattedDisplayDate,
-                                  style: TextStyle(
-                                    fontSize: Responsive.of(context).titleFontSize,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              ...records.map((record) {
-                                return Card(
-                                  margin: EdgeInsets.only(bottom: Responsive.of(context).listPadding.vertical / 2),
-                                  elevation: Responsive.of(context).cardElevation,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: Responsive.of(context).cardBorderRadius,
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: Responsive.of(context).contentPadding,
-                                    title: Text(
-                                      record.personName ?? localizations.unknown,
-                                      style: TextStyle(fontSize: bodySize, fontWeight: FontWeight.w600),
-                                    ),
-                                    subtitle: Text(
-                                      '${localizedCategoryLabel(context, record.category)}${record.comment != null && record.comment!.isNotEmpty ? ': ${record.comment}' : ''}',
-                                      style: TextStyle(fontSize: bodySize - 2),
-                                    ),
-                                    onTap: () => _onEntryTap(record.date),
-                                  ),
-                                );
-                              }),
-                            ],
-                          );
-                        },
-                      ),
-          ),
+          for (final record in records)
+            Card(
+              margin: EdgeInsets.only(bottom: responsive.listPadding.vertical * 1.5),
+              elevation: responsive.cardElevation,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(borderRadius: responsive.cardBorderRadius),
+              child: ListTile(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: responsive.contentPadding.left,
+                  vertical: 4,
+                ),
+                leading: CircleAvatar(
+                  backgroundColor: scheme.primary.withValues(alpha: 0.12),
+                  child: Icon(
+                    categoryIcons[record.category] ?? Icons.label_outline,
+                    color: scheme.primary,
+                    size: responsive.iconSize(baseSize: 22),
+                  ),
+                ),
+                title: Text(
+                  record.personName ?? localizations.unknown,
+                  style: TextStyle(fontSize: bodySize, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${localizedCategoryLabel(context, record.category)}${record.comment != null && record.comment!.isNotEmpty ? ': ${record.comment}' : ''}',
+                  style: TextStyle(fontSize: bodySize - 2),
+                ),
+                trailing: Icon(Icons.chevron_right, size: responsive.iconSize()),
+                onTap: () => _onEntryTap(record.date),
+              ),
+            ),
         ],
       ),
     );
