@@ -218,11 +218,15 @@ abstract class AppLocalizations {
   String get noWeeklyEntriesFound;
   String get showWeeksWithDataTooltip;
   String get selectWeekHelpText;
+  String calendarWeek(int week, int year);
   String get noDataForThisWeek;
   String get jumpToCurrentWeek;
   String get weeksWithData;
   String get excludeFromYearReport;
   String get includeInYearReport;
+  String get countedInYearReport;
+  String get notCountedInYearReport;
+  String get selectedWeek;
   String get migrationBgAbbreviation;
   String get totalVisitors;
 

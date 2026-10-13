@@ -27,6 +27,17 @@ int getCurrentYearAsInt() {
   return yearDate.year.toInt();
 }
 
+/// The ISO 8601 calendar week of [date] and the year it belongs to. The week
+/// containing a year's first Thursday is week 1, so 29.12.2025 is week 1 of
+/// 2026. Used for display only.
+({int week, int year}) isoCalendarWeek(DateTime date) {
+  // UTC dates: a daylight saving change must not shift the day count.
+  final day = DateTime.utc(date.year, date.month, date.day);
+  final thursday = day.add(Duration(days: DateTime.thursday - day.weekday));
+  final dayOfYear = thursday.difference(DateTime.utc(thursday.year, 1, 1)).inDays;
+  return (week: dayOfYear ~/ 7 + 1, year: thursday.year);
+}
+
 DateTime getFirstDateOfWeek(DateTime date) {
   int daysToSubtract = date.weekday - DateTime.monday;
   return date.subtract(Duration(days: daysToSubtract));
