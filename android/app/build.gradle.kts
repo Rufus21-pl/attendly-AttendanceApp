@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.example.attendly"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android 14 needs API 37 to compile; Flutter's default is lower.
+    // This only selects the SDK to compile against. targetSdk decides the runtime behaviour.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
