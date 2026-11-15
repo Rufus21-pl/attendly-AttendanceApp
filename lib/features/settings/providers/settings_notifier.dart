@@ -3,13 +3,17 @@ import 'package:attendly/data/settings/settings_service.dart';
 import 'package:attendly/features/settings/providers/settings_state.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
-class SettingsNotifier extends StateNotifier<SettingsState> {
+class SettingsNotifier extends Notifier<SettingsState> {
   final SettingsService _service;
- 
-  SettingsNotifier(this._service) : super(const SettingsState());
+
+  SettingsNotifier(this._service);
+
+  /// The defaults (light theme, English) until [load] has read settings.json.
+  @override
+  SettingsState build() => const SettingsState();
 
   /// Reads settings.json. Called by startup once the storage permission is
   /// granted; until then the defaults (light theme, English) are used.
@@ -18,7 +22,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       final themeMode = await _service.getThemeMode();
       final locale    = await _service.getLocale();
       AppLogger.i('Settings', 'Loaded settings: theme=${themeMode.name}, language=${locale.languageCode}');
-      if (!mounted) return;
+      if (!ref.mounted) return;
       state = SettingsState(
         themeMode: themeMode,
         locale:    locale,
@@ -26,11 +30,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       );
     } on SettingsException catch (e, stackTrace) {
       AppLogger.e('Settings', 'Loading settings failed, showing critical settings screen', e, stackTrace);
-      if (!mounted) return;
+      if (!ref.mounted) return;
       state = SettingsState(error: e, isLoaded: true);
     } catch (e, stackTrace) {
       AppLogger.e('Settings', 'Unexpected error while loading settings', e, stackTrace);
-      if (!mounted) return;
+      if (!ref.mounted) return;
       state = SettingsState(
         error:    SettingsFileNotFoundException(),
         isLoaded: true,
@@ -53,6 +57,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
  
 /// The single provider your whole app reads.
 final settingsProvider =
-    StateNotifierProvider<SettingsNotifier, SettingsState>(
-  (ref) => SettingsNotifier(SettingsService()),
+    NotifierProvider<SettingsNotifier, SettingsState>(
+  () => SettingsNotifier(SettingsService()),
 );

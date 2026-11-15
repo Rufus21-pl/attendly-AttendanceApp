@@ -34,7 +34,7 @@ void main() {
       overrides: [
         databaseProvider.overrideWith(() => DatabaseNotifier(manager)),
         storagePermissionServiceProvider.overrideWithValue(permission),
-        settingsProvider.overrideWith((ref) => SettingsNotifier(_GermanSettingsService())),
+        settingsProvider.overrideWith(() => SettingsNotifier(_GermanSettingsService())),
       ],
       child: const AttendlyApp(),
     ));
