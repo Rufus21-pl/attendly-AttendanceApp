@@ -2,16 +2,20 @@ import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/features/directory/data/directory_repository.dart';
 import 'package:attendly/features/directory/models/letter_index.dart';
 import 'package:attendly/data/database/database_provider.dart';
+import 'package:attendly/shared/providers/value_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 final directoryRepositoryProvider = Provider<DirectoryRepository>((ref) {
   return DirectoryRepository(ref.watch(appDatabaseProvider));
 });
 
-final directorySortAscendingProvider = StateProvider<bool>((ref) => true);
+final directorySortAscendingProvider = NotifierProvider<ValueState<bool>, bool>(
+  () => ValueState((ref) => true),
+);
  
-final directorySearchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
+final directorySearchQueryProvider = NotifierProvider.autoDispose<ValueState<String>, String>(
+  () => ValueState((ref) => ''),
+);
  
  
 final directoryStreamProvider =
