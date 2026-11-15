@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:attendly/data/backup/backup_info.dart';
 import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/data/database/database_manager.dart';
 import 'package:attendly/data/database/exceptions.dart';
@@ -6,6 +7,7 @@ import 'package:attendly/data/database/database_manager_interface.dart';
 import 'package:attendly/data/database/database_state.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
  
  
@@ -89,6 +91,36 @@ class DatabaseNotifier extends Notifier<DatabaseState> {
     return _manager.getSettingsJsonContent();
   }
  
+  /// True when the open database was opened, but the check found damage.
+  bool get isOpenDatabaseDamaged => _manager.isOpenDatabaseDamaged;
+
+  /// The backup copies of all databases, newest first.
+  Future<List<BackupInfo>> listBackups() {
+    return _manager.listBackups();
+  }
+
+  /// The backup copies of the main database from settings.json, newest
+  /// first. Known after the startup checks, also when it cannot be opened.
+  Future<List<BackupInfo>> listBackupsOfCurrentDatabase() async {
+    final path = _manager.currentDbPath;
+    if (path == null) return [];
+    final fileName = p.basename(path);
+    final backups = await _manager.listBackups();
+    return backups.where((backup) => backup.dbFileName == fileName).toList();
+  }
+
+  /// Closes the open database and puts [backup] back as the main database.
+  /// The caller opens it with the normal startup checks.
+  Future<void> restoreBackup(BackupInfo backup) async {
+    state = const DatabaseState();
+    await _manager.restoreBackup(backup);
+  }
+
+  /// Writes a backup of the open database now and waits for it.
+  Future<void> backupNow() {
+    return _manager.backupNow();
+  }
+
   /// Writes a backup that is waiting for its delay now. Called when the app
   /// goes to the background, where Android can stop it at any time.
   Future<void> flushBackup() {
