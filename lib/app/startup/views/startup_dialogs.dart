@@ -127,6 +127,48 @@ class StartupDialogs {
     );
   }
 
+  /// Asks before a backup replaces the main database. [backupTime] is the
+  /// time of the backup, as shown in the list.
+  static Future<bool?> confirmRestore(BuildContext context, String backupTime) {
+    final localizations = AppLocalizations.of(context);
+    final isTablet = Responsive.of(context).isTablet;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(children: [
+          Icon(Icons.settings_backup_restore, color: Colors.orange, size: isTablet ? 32 : 24),
+          SizedBox(width: isTablet ? 12 : 8),
+          Expanded(
+            child: Text(localizations.confirmRestoreTitle,
+                style: TextStyle(
+                    fontSize: isTablet ? 22.0 : 18.0,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ]),
+        content: SingleChildScrollView(
+          child: Text(
+            localizations.confirmRestoreMessage(backupTime),
+            style: TextStyle(fontSize: isTablet ? 18.0 : 16.0),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations.cancel,
+                style: TextStyle(fontSize: isTablet ? 18.0 : 16.0)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(localizations.restoreBackup,
+                style: TextStyle(fontSize: isTablet ? 18.0 : 16.0)),
+          ),
+        ],
+        contentPadding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
+      ),
+    );
+  }
+
   static void error(BuildContext context, String message) {
     final isTablet = Responsive.of(context).isTablet;
     showDialog(
