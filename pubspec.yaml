@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
   path_provider: ^2.1.6
   path: ^1.9.1
-  permission_handler: ^12.0.1
+  permission_handler: ^13.0.2
   intl: ^0.20.3
   font_awesome_flutter: ^11.0.0
   fl_chart: ^1.3.1
