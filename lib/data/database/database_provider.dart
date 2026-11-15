@@ -89,6 +89,12 @@ class DatabaseNotifier extends Notifier<DatabaseState> {
     return _manager.getSettingsJsonContent();
   }
  
+  /// Writes a backup that is waiting for its delay now. Called when the app
+  /// goes to the background, where Android can stop it at any time.
+  Future<void> flushBackup() {
+    return _manager.flushBackup();
+  }
+
   /// Closes the underlying DB and resets state to "not ready".
   /// Called before switching to a different DB file.
   Future<void> closeDatabase() async {

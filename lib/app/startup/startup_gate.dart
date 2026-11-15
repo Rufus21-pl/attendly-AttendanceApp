@@ -46,6 +46,11 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
     if (state == AppLifecycleState.resumed) {
       ref.read(appStartupProvider.notifier).recheckPermission();
     }
+    // Android can stop the app in the background without a warning, so a
+    // backup that still waits for its delay is written now.
+    if (state == AppLifecycleState.paused) {
+      ref.read(databaseProvider.notifier).flushBackup();
+    }
   }
 
   void _onStartupChanged(AsyncValue<StartupState>? previous, AsyncValue<StartupState> next) {

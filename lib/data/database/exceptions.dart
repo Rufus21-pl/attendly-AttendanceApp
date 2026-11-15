@@ -67,3 +67,10 @@ class DatabaseFailedInit extends DatabaseException {
   @override
   String toString() => 'Error: $message';
 }
+
+/// Thrown when a database file is damaged or is not an SQLite database.
+class DatabaseCorruptedException extends DatabaseException {
+  final String path;
+
+  DatabaseCorruptedException(this.path) : super("The database file is damaged: $path");
+}
