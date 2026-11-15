@@ -1,5 +1,7 @@
+import 'package:attendly/core/app_info/app_info.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
 import 'package:attendly/features/settings/pages/help_page.dart';
+import 'package:attendly/features/settings/widgets/about_dialogs.dart';
 import 'package:attendly/features/settings/providers/settings_notifier.dart';
 import 'package:attendly/features/settings/widgets/changelog_dialog.dart';
 import 'package:attendly/data/database/database_provider.dart';
@@ -132,6 +134,32 @@ class SettingsPage extends ConsumerWidget  {
             _SectionTitle(localizations.aboutSection),
             _SettingsCard(
               children: [
+                _SettingsTile(
+                  title: AppInfo.copyrightNotice,
+                  subtitle: localizations.allRightsReserved,
+                  icon: Icons.copyright_outlined,
+                ),
+                _SettingsTile(
+                  title: localizations.licenseTitle,
+                  subtitle: localizations.licenseDesc,
+                  icon: Icons.gavel_outlined,
+                  trailing: Icon(Icons.chevron_right, size: iconSize),
+                  onTap: () => AboutDialogs.showLicense(context),
+                ),
+                _SettingsTile(
+                  title: localizations.openSourceLicenses,
+                  subtitle: localizations.openSourceLicensesDesc,
+                  icon: Icons.code_outlined,
+                  trailing: Icon(Icons.chevron_right, size: iconSize),
+                  onTap: () => AboutDialogs.showOpenSourceLicenses(context),
+                ),
+                _SettingsTile(
+                  title: localizations.contactAuthor,
+                  subtitle: localizations.contactAuthorDesc,
+                  icon: Icons.mail_outline,
+                  trailing: Icon(Icons.chevron_right, size: iconSize),
+                  onTap: () => AboutDialogs.showContact(context),
+                ),
                 Padding(
                   padding: responsive.contentPadding,
                   child: Column(
