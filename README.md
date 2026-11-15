@@ -83,7 +83,20 @@ Located in the **Settings**, the Help page provides guidance on how to use the a
 
 - **Type:** SQLite (via [`sqflite`](https://pub.dev/packages/sqflite))
 - **Location:** Stored locally on the device.
-- **Backup:** Users should manually copy database files from storage if needed.
+- **Backup:** The app writes a backup copy by itself, see below.
+
+---
+
+## 💾 Backup
+
+The app keeps backup copies of each database in `Documents/AttendlyDb/backup/`.
+
+- **When:** a few seconds after each change, when the app goes to the background and when a database is closed.
+- **Files:** `db_<year>.latest.bak` is the newest copy. `db_<year>.previous.bak` is the last copy of the earlier day that had changes.
+- **Damaged database:** a database that SQLite reports as damaged is never copied over a good backup.
+- **Size:** two files per database, each about as large as the database. No manual cleanup is needed.
+- **Limits:** the copies are on the same device. They protect against a damaged or deleted database file, not against a lost or broken device. For that, copy the `AttendlyDb` folder to another device from time to time.
+- **Uninstall:** the backup files stay on the device, like the databases.
 
 ---
 
