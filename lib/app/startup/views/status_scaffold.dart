@@ -9,6 +9,9 @@ class StatusScaffold extends StatelessWidget {
   final String title;
   final String message;
   final String? details;
+
+  /// Shown between the text and the buttons, e.g. a list to select from.
+  final Widget? content;
   final List<Widget> actions;
 
   const StatusScaffold({
@@ -17,6 +20,7 @@ class StatusScaffold extends StatelessWidget {
     required this.title,
     required this.message,
     this.details,
+    this.content,
     required this.actions,
   });
 
@@ -58,6 +62,10 @@ class StatusScaffold extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ],
+              if (content != null) ...[
+                SizedBox(height: isTablet ? 28 : 20),
+                content!,
+              ],
               SizedBox(height: isTablet ? 40 : 30),
               Wrap(
                 alignment: WrapAlignment.center,
@@ -90,10 +98,10 @@ class StartupActionButton extends StatelessWidget {
   });
 
   /// The database icon used by "Create database" / "Create new".
-  static Widget databaseIcon(BuildContext context) => FaIcon(
+  static Widget databaseIcon(BuildContext context, {Color color = Colors.white}) => FaIcon(
         FontAwesomeIcons.database,
         size: Responsive.of(context).isTablet ? 22 : 18,
-        color: Colors.white,
+        color: color,
       );
 
   @override
