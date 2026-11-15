@@ -113,7 +113,7 @@ class WeeklyReportTab extends ShellTab {
 
     // A changed "countable" status needs no refresh: the week stream re-emits.
     if (result != null) {
-      ref.read(selectedWeekProvider.notifier).state = DateTime.parse(result['date']);
+      ref.read(selectedWeekProvider.notifier).set(DateTime.parse(result['date']));
     }
   }
 }
@@ -140,12 +140,12 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
     );
 
     if (picked != null && picked != selectedWeekDate && mounted) {
-      ref.read(selectedWeekProvider.notifier).state = picked;
+      ref.read(selectedWeekProvider.notifier).set(picked);
     }
   }
 
   void _changeWeek(int days) {
-    ref.read(selectedWeekProvider.notifier).state = selectedWeekDate.add(Duration(days: days));
+    ref.read(selectedWeekProvider.notifier).set(selectedWeekDate.add(Duration(days: days)));
   }
 
   @override

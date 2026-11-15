@@ -10,7 +10,7 @@ void main() {
 
     // The open weekly tab watches the week; leaving the tab drops the listener.
     final subscription = container.listen(selectedWeekProvider, (_, _) {});
-    container.read(selectedWeekProvider.notifier).state = monday;
+    container.read(selectedWeekProvider.notifier).set(monday);
     subscription.close();
     await Future<void>.delayed(Duration.zero);
 

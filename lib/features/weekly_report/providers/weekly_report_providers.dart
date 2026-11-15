@@ -2,8 +2,8 @@ import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/features/weekly_report/data/weekly_repository.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
+import 'package:attendly/shared/providers/value_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 final weeklyRepositoryProvider = Provider<WeeklyRepository>((ref) {
   return WeeklyRepository(ref.watch(appDatabaseProvider));
@@ -23,7 +23,9 @@ final allWeeksProvider = StreamProvider.autoDispose<List<WeeklyEntryData>>((ref)
 /// Monday of the week shown in the weekly report: the current week, or the
 /// first week of an older database's year. Kept when the tab is left, like
 /// the daily tab's date; resets when another database year is opened.
-final selectedWeekProvider = StateProvider<DateTime>((ref) {
-  final dbYear = ref.watch(databaseProvider.select((s) => s.dbYear));
-  return getFirstDateOfWeek(getScopedDate(dbYear: dbYear));
-});
+final selectedWeekProvider = NotifierProvider<ValueState<DateTime>, DateTime>(
+  () => ValueState((ref) {
+    final dbYear = ref.watch(databaseProvider.select((s) => s.dbYear));
+    return getFirstDateOfWeek(getScopedDate(dbYear: dbYear));
+  }),
+);
