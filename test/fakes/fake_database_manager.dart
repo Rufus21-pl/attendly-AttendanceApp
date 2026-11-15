@@ -107,6 +107,12 @@ class FakeDatabaseManager implements DatabaseManagerInterface {
   /// How often [backupNow] was called.
   int manualBackups = 0;
 
+  /// Thrown by [restoreBackup] while set.
+  Object? restoreError;
+
+  /// The backup that [restoreBackup] was called with last.
+  BackupInfo? restoredBackup;
+
   @override
   bool get isOpenDatabaseDamaged => _db != null && damaged;
 
@@ -125,7 +131,9 @@ class FakeDatabaseManager implements DatabaseManagerInterface {
   @override
   Future<void> restoreBackup(BackupInfo backup) async {
     calls.add('restoreBackup(${backup.dbFileName})');
+    restoredBackup = backup;
     await closeDatabase();
+    if (restoreError != null) throw restoreError!;
     // The restored file is a good database and the main one again.
     openError = null;
     damaged = false;
