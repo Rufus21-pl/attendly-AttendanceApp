@@ -33,7 +33,7 @@ class AppDatabase extends _$AppDatabase{
   );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   //PRAGMA user_version; to check which db schema version currently is, need to added it to the settings page to display
 
@@ -98,6 +98,25 @@ class AppDatabase extends _$AppDatabase{
           await customStatement('DROP INDEX IF EXISTS ${index.entityName}');
           await m.createIndex(index);
         }
+      }
+
+      if (from < 4) {
+        AppLogger.i(_tag, "Migrating to v4: Adding the foreign key daily_entry.person_id -> directory_people.id");
+
+        // Entries of a person that no longer exists. No page shows them and
+        // the recalculation skips them, because every read joins the person.
+        // The foreign key does not allow them, so they are removed.
+        const orphans = 'person_id NOT IN (SELECT id FROM directory_people)';
+        final row = await customSelect('SELECT COUNT(*) AS c FROM daily_entry WHERE $orphans').getSingle();
+        final orphanCount = row.read<int>('c');
+        if (orphanCount > 0) {
+          AppLogger.w(_tag, "Migrating to v4: Removing $orphanCount daily entries without a person");
+          await customStatement('DELETE FROM daily_entry WHERE $orphans');
+        }
+
+        // SQLite cannot add a constraint to a column: the table is rebuilt
+        // with its rows and indexes.
+        await m.alterTable(TableMigration(dailyEntry));
       }
     });
   }

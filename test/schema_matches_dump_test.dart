@@ -4,7 +4,7 @@ import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'generated_migrations/schema.dart';
-import 'generated_migrations/schema_v3.dart' as v3;
+import 'generated_migrations/schema_v4.dart' as v4;
 
 /// A database that the app creates today must have the same tables and
 /// indexes as the dump of its schema version in drift_schemas/.
@@ -27,12 +27,12 @@ void main() {
     };
   }
 
-  test('a new database has the schema of the v3 dump', () async {
+  test('a new database has the schema of the v4 dump', () async {
     final created = AppDatabase.testInstance();
     final verifier = SchemaVerifier(GeneratedHelper());
-    final fromDump = v3.DatabaseAtV3((await verifier.schemaAt(3)).newConnection());
+    final fromDump = v4.DatabaseAtV4((await verifier.schemaAt(4)).newConnection());
 
-    expect(created.schemaVersion, 3, reason: 'compare with the dump of the current schema version');
+    expect(created.schemaVersion, 4, reason: 'compare with the dump of the current schema version');
     expect(await readSchema(created), await readSchema(fromDump));
 
     await created.close();

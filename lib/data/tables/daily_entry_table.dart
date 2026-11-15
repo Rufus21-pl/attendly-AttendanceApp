@@ -1,4 +1,5 @@
 import 'package:attendly/data/tables/date_only_converter.dart';
+import 'package:attendly/data/tables/directory_people_table.dart';
 import 'package:attendly/data/tables/enums/category.dart';
 import 'package:drift/drift.dart';
 
@@ -9,10 +10,10 @@ import 'package:drift/drift.dart';
 class DailyEntry extends Table{
   IntColumn get recordId => integer()();
   TextColumn get date => text().map(const DateOnlyConverter())();
-  /// The id of a row in directory_people. There is no REFERENCES constraint:
-  /// no database file has one (schema v1 to v3), and adding it needs a new
-  /// schema version with a migration. The DAOs keep the rows consistent.
-  IntColumn get personId => integer()();
+  /// The person of this entry. Since schema v4 the database itself refuses an
+  /// entry for a person that does not exist, and refuses to delete a person
+  /// that still has entries (the DAOs delete the entries first).
+  IntColumn get personId => integer().references(DirectoryPeople, #id)();
   TextColumn get category => textEnum<Category>()();
   TextColumn get description => text().nullable()();
 
