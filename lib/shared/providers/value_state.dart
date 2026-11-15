@@ -24,9 +24,17 @@ class ValueState<T> extends Notifier<T> {
   /// The current value, for code that holds this notifier.
   T get value => state;
 
-  /// Replaces the value.
-  void set(T value) => state = value;
+  /// Replaces the value. Does nothing when [value] equals the current value.
+  ///
+  /// The check matters in debug mode: Riverpod reports every assignment made
+  /// while widgets build, also one that changes nothing. A page that resets
+  /// a value in initState, e.g. clears a search text that is already empty,
+  /// must not fail because of this.
+  void set(T value) {
+    if (value == state) return;
+    state = value;
+  }
 
   /// Replaces the value with the result of [change] on the current value.
-  void update(T Function(T current) change) => state = change(state);
+  void update(T Function(T current) change) => set(change(state));
 }
