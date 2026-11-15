@@ -758,4 +758,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String testPeopleDeleted(int count) => '$count test people deleted';
+
+  // Settings: author and license
+  @override
+  String get allRightsReserved => 'All rights reserved.';
+
+  @override
+  String get licenseTitle => 'License';
+
+  @override
+  String get licenseDesc => 'Terms of use for this app';
+
+  @override
+  String get licenseLoadFailed => 'The license text could not be loaded.';
+
+  @override
+  String get openSourceLicenses => 'Open-source licenses';
+
+  @override
+  String get openSourceLicensesDesc => 'Licenses of the packages used in this app';
+
+  @override
+  String get contactAuthor => 'Contact';
+
+  @override
+  String get contactAuthorDesc => 'Ask the author for permission or a purchase';
+
+  @override
+  String get linkCopiedToClipboard => 'Link copied to clipboard';
 }

@@ -348,4 +348,15 @@ abstract class AppLocalizations {
   String get deleteTestPeople;
   String testPeopleAdded(int count);
   String testPeopleDeleted(int count);
+
+  // Settings: author and license
+  String get allRightsReserved;
+  String get licenseTitle;
+  String get licenseDesc;
+  String get licenseLoadFailed;
+  String get openSourceLicenses;
+  String get openSourceLicensesDesc;
+  String get contactAuthor;
+  String get contactAuthorDesc;
+  String get linkCopiedToClipboard;
 }
