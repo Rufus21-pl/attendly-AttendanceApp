@@ -4,6 +4,7 @@ import 'package:attendly/features/daily_log/models/person_with_categories.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/shared/providers/value_state.dart';
+import 'package:attendly/shared/providers/never_paused.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
@@ -43,7 +44,7 @@ final dailyRawLogsProvider = StreamProvider.autoDispose<List<PersonWithCategorie
   final date = ref.watch(dailyDateProvider);
   final repo = ref.watch(dailyRepositoryProvider);
 
-  return repo.watchDailyLogsFromCurrentDay(date).map((rawResults) {
+  return repo.watchDailyLogsFromCurrentDay(date).neverPaused().map((rawResults) {
     final Map<int, PersonWithCategories> personMap = {};
 
     for (final row in rawResults) {
