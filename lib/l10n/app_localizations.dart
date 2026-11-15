@@ -359,4 +359,26 @@ abstract class AppLocalizations {
   String get contactAuthor;
   String get contactAuthorDesc;
   String get linkCopiedToClipboard;
+  // Backup: restore screen and settings
+  String get restoreTitleUnreadable;
+  String get restoreMessageUnreadable;
+  String get restoreTitleDamaged;
+  String get restoreMessageDamaged;
+  String get restoreTitleMissing;
+  String get restoreMessageMissing;
+  String get restoreTitleNoDatabase;
+  String get restoreMessageNoDatabase;
+  String get restoreBackup;
+  String get restoreFromBackup;
+  String get continueWithDatabase;
+  String get backupLatest;
+  String get backupPreviousDay;
+  String get confirmRestoreTitle;
+  String confirmRestoreMessage(String date);
+  String get restoreFailed;
+  String get databaseBackup;
+  String lastBackupAt(String date);
+  String get noBackupYet;
+  String get backupWritten;
+  String get backupFailed;
 }

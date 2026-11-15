@@ -779,4 +779,77 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get linkCopiedToClipboard => 'Link in die Zwischenablage kopiert';
+  // Backup: restore screen and settings
+  @override
+  String get restoreTitleUnreadable => 'Datenbank kann nicht geöffnet werden';
+
+  @override
+  String get restoreMessageUnreadable =>
+      'Die Datenbankdatei ist beschädigt. Sie können sie aus einer Sicherung wiederherstellen. '
+      'Die beschädigte Datei bleibt im Sicherungsordner erhalten.';
+
+  @override
+  String get restoreTitleDamaged => 'Datenbank ist beschädigt';
+
+  @override
+  String get restoreMessageDamaged =>
+      'Eine Prüfung hat Schäden in der Datenbank gefunden. Sie können eine Sicherung wiederherstellen '
+      'oder mit dieser Datenbank fortfahren. Solange die Datenbank beschädigt ist, werden keine neuen Sicherungen erstellt.';
+
+  @override
+  String get restoreTitleMissing => 'Datenbank nicht gefunden';
+
+  @override
+  String get restoreMessageMissing =>
+      'Die Datenbankdatei fehlt, aber es gibt eine Sicherung. Sie können die Sicherung wiederherstellen '
+      'oder eine neue Datenbank erstellen.';
+
+  @override
+  String get restoreTitleNoDatabase => 'Aus Sicherung wiederherstellen';
+
+  @override
+  String get restoreMessageNoDatabase =>
+      'Es ist keine Datenbank vorhanden, aber es wurden Sicherungen gefunden. '
+      'Wählen Sie eine Sicherung aus, um sie wieder als Datenbank zu verwenden.';
+
+  @override
+  String get restoreBackup => 'Sicherung wiederherstellen';
+
+  @override
+  String get restoreFromBackup => 'Aus Sicherung wiederherstellen';
+
+  @override
+  String get continueWithDatabase => 'Mit dieser Datenbank fortfahren';
+
+  @override
+  String get backupLatest => 'Neueste Sicherung';
+
+  @override
+  String get backupPreviousDay => 'Sicherung vom Vortag';
+
+  @override
+  String get confirmRestoreTitle => 'Diese Sicherung wiederherstellen?';
+
+  @override
+  String confirmRestoreMessage(String date) =>
+      'Die Datenbank erhält den Stand vom $date. Änderungen nach diesem Zeitpunkt gehen verloren. '
+      'Die ersetzte Datenbankdatei bleibt im Sicherungsordner erhalten.';
+
+  @override
+  String get restoreFailed => 'Die Sicherung konnte nicht wiederhergestellt werden';
+
+  @override
+  String get databaseBackup => 'Datenbank-Sicherung';
+
+  @override
+  String lastBackupAt(String date) => 'Letzte Sicherung: $date. Tippen, um jetzt zu sichern.';
+
+  @override
+  String get noBackupYet => 'Noch keine Sicherung. Tippen, um jetzt zu sichern.';
+
+  @override
+  String get backupWritten => 'Sicherung erstellt';
+
+  @override
+  String get backupFailed => 'Die Sicherung konnte nicht erstellt werden';
 }
