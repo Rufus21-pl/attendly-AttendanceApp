@@ -3,6 +3,7 @@ import 'package:attendly/features/weekly_report/data/weekly_repository.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/shared/providers/value_state.dart';
+import 'package:attendly/shared/providers/never_paused.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final weeklyRepositoryProvider = Provider<WeeklyRepository>((ref) {
@@ -11,13 +12,13 @@ final weeklyRepositoryProvider = Provider<WeeklyRepository>((ref) {
 
 final weeklyReportProvider = StreamProvider.autoDispose.family<WeeklyEntryData?, DateTime>((ref, date) {
   final repo = ref.watch(weeklyRepositoryProvider);
-  return repo.watchWeeklyEntryByDate(date);
+  return repo.watchWeeklyEntryByDate(date).neverPaused();
 });
 
 
 final allWeeksProvider = StreamProvider.autoDispose<List<WeeklyEntryData>>((ref) {
   final repo = ref.watch(weeklyRepositoryProvider);
-  return repo.watchAllWeeks();
+  return repo.watchAllWeeks().neverPaused();
 });
 
 /// Monday of the week shown in the weekly report: the current week, or the
