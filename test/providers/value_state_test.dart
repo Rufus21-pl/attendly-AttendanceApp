@@ -1,4 +1,5 @@
 import 'package:attendly/shared/providers/value_state.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,6 +36,27 @@ void main() {
     expect(container.read(_year), 2027);
     expect(container.read(_year.notifier).value, 2027);
     expect(seen, [2027]);
+  });
+
+  test('set with the current value tells nobody', () {
+    final seen = <int>[];
+    container.listen(_year, (_, next) => seen.add(next));
+
+    container.read(_year.notifier).set(2026);
+
+    expect(seen, isEmpty);
+  });
+
+  testWidgets('a widget can set the current value again while it is built', (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      child: Consumer(builder: (context, ref, _) {
+        // Like a page that clears an empty search text in initState.
+        ref.read(_search.notifier).set('');
+        return Text(ref.watch(_search), textDirection: TextDirection.ltr);
+      }),
+    ));
+
+    expect(tester.takeException(), isNull);
   });
 
   test('update changes the value from the current value', () {
