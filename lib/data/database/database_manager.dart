@@ -1,7 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:attendly/data/backup/backup_info.dart';
+import 'package:attendly/data/backup/backup_scheduler.dart';
+import 'package:attendly/data/backup/database_backup_service.dart';
 import 'package:attendly/data/database/exceptions.dart';
 import 'package:attendly/data/database/database_manager_interface.dart';
+import 'package:attendly/data/database/sqlite_errors.dart';
 import 'package:attendly/data/settings/settings_store.dart';
 import 'package:attendly/data/storage/storage_manager.dart';
 import 'package:attendly/core/utils/date_utils.dart';
@@ -13,9 +17,20 @@ import 'package:attendly/data/database/app_database.dart';
 class DatabaseManager implements DatabaseManagerInterface {
   static const String _tag = "Database";
 
+  /// Only tests pass a [backupService] or a [backupDelay].
+  DatabaseManager({DatabaseBackupService? backupService, Duration? backupDelay})
+      : _backupService = backupService ?? DatabaseBackupService(),
+        _backupDelay = backupDelay ?? BackupScheduler.defaultDelay;
+
+  final DatabaseBackupService _backupService;
+  final Duration _backupDelay;
+
   AppDatabase? _db;
   File? _oldDbFile;
   File? _currentDbFile;
+
+  /// Writes the backup of [_db] after changes. Exists while [_db] is open.
+  BackupScheduler? _backupScheduler;
 
   @override
   String? get currentDbPath => _currentDbFile?.path;
@@ -110,9 +125,15 @@ class DatabaseManager implements DatabaseManagerInterface {
       await _db!.forceOpen();
     } catch (e, stackTrace) {
       AppLogger.e(_tag, "Opening ${targetFile.path} failed after ${stopwatch.elapsedMilliseconds} ms", e, stackTrace);
+      if (isCorruptionError(e)) {
+        await _closeDamaged();
+        throw DatabaseCorruptedException(targetFile.path);
+      }
       rethrow;
     }
+
     AppLogger.i(_tag, "Opened ${p.basename(targetFile.path)} in ${stopwatch.elapsedMilliseconds} ms");
+    await _startBackups();
   }
 
   @override
@@ -143,6 +164,7 @@ class DatabaseManager implements DatabaseManagerInterface {
     await SettingsStore.update({'current_year': newYear, 'file_path': newDbPath});
     _currentDbFile = newDbFile;
     AppLogger.i(_tag, "Database $newDbPath ready and set as default");
+    await _startBackups();
   }
 
   @override
@@ -168,6 +190,8 @@ class DatabaseManager implements DatabaseManagerInterface {
 
       AppLogger.i(_tag, "Rollover step 3/3: copying people directory");
       await _db!.copyPersonDirFromOldDatabase(oldPath);
+      // The copy is one plain SQL statement, which does not report a write.
+      _backupScheduler?.requestBackup();
     } catch (e, stackTrace) {
       AppLogger.e(_tag, "Year rollover from $oldPath failed", e, stackTrace);
       rethrow;
@@ -179,6 +203,9 @@ class DatabaseManager implements DatabaseManagerInterface {
   Future<void> closeDatabase() async {
     if (_db != null) {
       AppLogger.i(_tag, "Closing ${_currentDbFile != null ? p.basename(_currentDbFile!.path) : 'database'}");
+      // A change of the last seconds must be in the backup before the file closes.
+      await _backupScheduler?.close();
+      _backupScheduler = null;
       try {
         await _db!.close();
       } catch (e, stackTrace) {
@@ -199,6 +226,65 @@ class DatabaseManager implements DatabaseManagerInterface {
       AppLogger.e(_tag, "Reading settings.json for the debug view failed", e, stackTrace);
       return '{ "error": "${e.toString()}" }';
     }
+  }
+
+  // =======================================================================
+  // BACKUP
+  // =======================================================================
+
+  @override
+  Future<void> flushBackup() async {
+    await _backupScheduler?.flush();
+  }
+
+  @override
+  Future<List<BackupInfo>> listBackups() => _backupService.listBackups();
+
+  @override
+  Future<void> restoreBackup(BackupInfo backup) async {
+    AppLogger.i(_tag, "Restoring ${backup.dbFileName} from its backup");
+    await closeDatabase();
+
+    final restored = await _backupService.restore(backup);
+
+    // The restored file is the main database again.
+    final year = backup.dbYear;
+    await SettingsStore.update({
+      'file_path': restored.path,
+      if (year != null) 'current_year': '$year',
+    });
+    _currentDbFile = restored;
+    _oldDbFile = null;
+  }
+
+  /// Starts the backups of the database that was just opened. The first
+  /// backup runs soon after, when the file has none or changed since.
+  Future<void> _startBackups() async {
+    final db = _db!;
+    final dbFile = _currentDbFile!;
+
+    final scheduler = BackupScheduler(
+      writes: db.tableUpdates(),
+      backup: () => _backupService.backupNow(db, dbFile),
+      delay: _backupDelay,
+    )..start();
+    _backupScheduler = scheduler;
+
+    try {
+      if (await _backupService.needsBackup(dbFile)) scheduler.requestBackup();
+    } catch (e, stackTrace) {
+      AppLogger.e(_tag, "Checking the backup of ${p.basename(dbFile.path)} failed", e, stackTrace);
+    }
+  }
+
+  /// Closes a database file that SQLite cannot read, without a backup.
+  Future<void> _closeDamaged() async {
+    try {
+      await _db?.close();
+    } catch (e, stackTrace) {
+      AppLogger.e(_tag, "Closing the damaged database failed", e, stackTrace);
+    }
+    _db = null;
   }
 
   // =======================================================================

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:attendly/data/backup/backup_info.dart';
 import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/data/database/exceptions.dart';
 import 'package:attendly/data/database/database_manager_interface.dart';
@@ -90,4 +91,22 @@ class FakeDatabaseManager implements DatabaseManagerInterface {
 
   @override
   Future<String> getSettingsJsonContent() async => '{}';
+
+  /// What [listBackups] returns.
+  List<BackupInfo> backups = [];
+
+  /// How often [flushBackup] was called.
+  int backupFlushes = 0;
+
+  @override
+  Future<void> flushBackup() async => backupFlushes++;
+
+  @override
+  Future<List<BackupInfo>> listBackups() async => backups;
+
+  @override
+  Future<void> restoreBackup(BackupInfo backup) async {
+    calls.add('restoreBackup(${backup.dbFileName})');
+    await closeDatabase();
+  }
 }
