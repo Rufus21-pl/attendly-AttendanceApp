@@ -582,6 +582,10 @@ class $DailyEntryTable extends DailyEntry
 class DailyEntryData extends DataClass implements Insertable<DailyEntryData> {
   final int recordId;
   final DateTime date;
+
+  /// The id of a row in directory_people. There is no REFERENCES constraint:
+  /// no database file has one (schema v1 to v3), and adding it needs a new
+  /// schema version with a migration. The DAOs keep the rows consistent.
   final int personId;
   final Category category;
   final String? description;
@@ -2152,8 +2156,15 @@ class $$DirectoryPeopleTableTableManager
                   p0
                       .map(
                         (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
+                          e.readTable<
+                            $DirectoryPeopleTable,
+                            DirectoryPeopleData
+                          >(table),
+                          BaseReferences<
+                            _$AppDatabase,
+                            $DirectoryPeopleTable,
+                            DirectoryPeopleData
+                          >(db, table, e),
                         ),
                       )
                       .toList(),
@@ -2367,8 +2378,12 @@ class $$DailyEntryTableTableManager
                   p0
                       .map(
                         (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
+                          e.readTable<$DailyEntryTable, DailyEntryData>(table),
+                          BaseReferences<
+                            _$AppDatabase,
+                            $DailyEntryTable,
+                            DailyEntryData
+                          >(db, table, e),
                         ),
                       )
                       .toList(),
@@ -2858,8 +2873,14 @@ class $$WeeklyEntryTableTableManager
                   p0
                       .map(
                         (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
+                          e.readTable<$WeeklyEntryTable, WeeklyEntryData>(
+                            table,
+                          ),
+                          BaseReferences<
+                            _$AppDatabase,
+                            $WeeklyEntryTable,
+                            WeeklyEntryData
+                          >(db, table, e),
                         ),
                       )
                       .toList(),
