@@ -114,9 +114,16 @@ The app writes a log file to help trace problems (startup, database open/create,
 - **German** 🇩🇪
 - **English** 🇬🇧
 
-<!-- ---
+---
 
 ## 📜 License
 
-This app is built for internal use by the youth club.  
-Distribution outside of the club is not intended unless explicitly approved. -->
+Copyright (c) 2026 Rufus21-pl. All rights reserved.
+
+Attendly is published under the [Attendly License](./LICENSE):
+
+- You can install and use the app free of charge, as long as the author's name and the license stay in it.
+- You need the author's written permission to copy, change, redistribute or sell the app, or to use it as a base for your own project.
+- The app comes without warranty. The author is not liable for damage or lost data.
+
+For permission or a purchase, contact the author through [GitHub](https://github.com/Rufus21-pl/attendly-AttendanceApp).
