@@ -1,21 +1,57 @@
-MIT License
+Attendly License
+Version 1.0
 
-Copyright (c) 2026 Polishskill21
+Copyright (c) 2026 Rufus21-pl. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+"Software" means the Attendly app, its source code and the associated
+documentation files. "Author" means the copyright holder named above.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Free use
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   You may install and use the Software free of charge for any lawful
+   purpose. You may also read the source code to check how the Software
+   works. Both rights apply only as long as the name of the Author and this
+   license stay visible and unchanged in the Software.
+
+2. Permission required
+
+   Without prior written permission of the Author you may not:
+
+   a) copy, modify, merge or build on the Software or parts of it, except
+      for copies that are technically necessary to install and run it and
+      for private backups;
+   b) publish, distribute or pass on the Software, in original or modified
+      form;
+   c) sell, rent, lease or sublicense the Software, or offer it as part of
+      a paid product or service;
+   d) remove or change the name of the Author or this license.
+
+   The Author can grant permission for an individual case and can attach
+   conditions to it.
+
+3. Purchase and further rights
+
+   If you want to buy the Software, use it as a base for your own project
+   or obtain any other right beyond section 1, contact the Author first:
+
+   https://github.com/Rufus21-pl/attendly-AttendanceApp
+
+4. Third-party components
+
+   The Software contains open-source components of other authors. These
+   components stay under their own licenses.
+
+5. No warranty, no liability
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. TO THE EXTENT
+   PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+   CLAIM, DAMAGES, LOSS OF DATA OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+   CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. Termination
+
+   The rights in section 1 end automatically if you do not follow this
+   license.
