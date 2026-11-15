@@ -52,7 +52,7 @@ void main() {
       final container = await pumpWithoutDatabase(
         tester,
         const AppShell(),
-        overrides: [selectedTabProvider.overrideWith((ref) => tab)],
+        overrides: [selectedTabProvider.overrideWithBuild((ref, _) => tab)],
       );
 
       expect(container.read(databaseProvider).dbError, isNull);
@@ -86,7 +86,7 @@ void main() {
               return db;
             }),
             for (final tab in AppTab.values)
-              if (name == 'the ${tab.name} tab') selectedTabProvider.overrideWith((ref) => tab),
+              if (name == 'the ${tab.name} tab') selectedTabProvider.overrideWithBuild((ref, _) => tab),
           ],
         );
         expect(find.byType(CircularProgressIndicator), findsNothing);

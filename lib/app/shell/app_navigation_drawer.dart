@@ -25,7 +25,7 @@ class AppNavigationDrawer extends ConsumerWidget {
   });
 
   void _selectTab(WidgetRef ref, AppTab tab) {
-    ref.read(selectedTabProvider.notifier).state = tab;
+    ref.read(selectedTabProvider.notifier).set(tab);
   }
 
   /// Runs the default startup again: the new-year banner leads to the

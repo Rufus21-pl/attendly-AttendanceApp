@@ -24,7 +24,7 @@ void main() {
       tester,
       const AppShell(),
       db: db,
-      overrides: [selectedTabProvider.overrideWith((ref) => tab)],
+      overrides: [selectedTabProvider.overrideWithBuild((ref, _) => tab)],
     );
   }
 
