@@ -1,5 +1,4 @@
 import 'package:attendly/data/tables/date_only_converter.dart';
-import 'package:attendly/data/tables/directory_people_table.dart';
 import 'package:attendly/data/tables/enums/category.dart';
 import 'package:drift/drift.dart';
 
@@ -10,7 +9,10 @@ import 'package:drift/drift.dart';
 class DailyEntry extends Table{
   IntColumn get recordId => integer()();
   TextColumn get date => text().map(const DateOnlyConverter())();
-  IntColumn get personId => integer().references(DirectoryPeople, #id)();
+  /// The id of a row in directory_people. There is no REFERENCES constraint:
+  /// no database file has one (schema v1 to v3), and adding it needs a new
+  /// schema version with a migration. The DAOs keep the rows consistent.
+  IntColumn get personId => integer()();
   TextColumn get category => textEnum<Category>()();
   TextColumn get description => text().nullable()();
 
