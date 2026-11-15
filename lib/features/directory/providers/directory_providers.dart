@@ -3,6 +3,7 @@ import 'package:attendly/features/directory/data/directory_repository.dart';
 import 'package:attendly/features/directory/models/letter_index.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/shared/providers/value_state.dart';
+import 'package:attendly/shared/providers/never_paused.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final directoryRepositoryProvider = Provider<DirectoryRepository>((ref) {
@@ -22,7 +23,7 @@ final directoryStreamProvider =
     StreamProvider<List<DirectoryPeopleData>>((ref) {
   final repo = ref.watch(directoryRepositoryProvider);
   final ascending = ref.watch(directorySortAscendingProvider);
-  return repo.watchAllPerson(ascending: ascending);
+  return repo.watchAllPerson(ascending: ascending).neverPaused();
 });
  
  
