@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/permissions/storage_permission_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -9,10 +10,18 @@ class StorageManager {
 
   static const StoragePermissionService _permission = StoragePermissionService();
 
+  /// Tests set this to a temporary directory. The permission check, the
+  /// platform lookup and the log file are skipped while it is set.
+  @visibleForTesting
+  static Directory? directoryOverride;
+
   /// Gets the custom external storage directory for the app.
   /// Only checks the storage permission; asking for it is up to the startup
   /// screen. Returns null while the permission is not granted.
   static Future<Directory?> getExternalDocumentsDir() {
+    final override = directoryOverride;
+    if (override != null) return Future.value(override);
+
     // Callers arriving while a lookup is running share its result.
     return _pendingDirLookup ??= _resolveExternalDocumentsDir()
         .whenComplete(() => _pendingDirLookup = null);
