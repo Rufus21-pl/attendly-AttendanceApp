@@ -3,8 +3,8 @@ import 'package:attendly/features/daily_log/models/category_record.dart';
 import 'package:attendly/features/daily_log/models/person_with_categories.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
+import 'package:attendly/shared/providers/value_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 
 final dailyRepositoryProvider = Provider<DailyRepository>((ref) {
@@ -12,17 +12,28 @@ final dailyRepositoryProvider = Provider<DailyRepository>((ref) {
 });
 
 
-final dailyDateProvider = StateProvider<DateTime>((ref) {
-  final dbYear = ref.watch(
-    databaseProvider.select((s) => s.dbYear),
-  );
-  return getScopedDate(dbYear: dbYear);
-});
+final dailyDateProvider = NotifierProvider<ValueState<DateTime>, DateTime>(
+  () => ValueState((ref) {
+    final dbYear = ref.watch(
+      databaseProvider.select((s) => s.dbYear),
+    );
+    return getScopedDate(dbYear: dbYear);
+  }),
+);
 
-final dailySearchProvider         = StateProvider.autoDispose<String>((ref) => '');
-final dailyCategoryFilterProvider = StateProvider.autoDispose<String?>((ref) => null);
-final dailyEditModeProvider       = StateProvider.autoDispose<bool>((ref) => false);
-final dailySelectedPeopleProvider = StateProvider.autoDispose<Set<PersonWithCategories>>((ref) => {});
+final dailySearchProvider = NotifierProvider.autoDispose<ValueState<String>, String>(
+  () => ValueState((ref) => ''),
+);
+final dailyCategoryFilterProvider = NotifierProvider.autoDispose<ValueState<String?>, String?>(
+  () => ValueState((ref) => null),
+);
+final dailyEditModeProvider = NotifierProvider.autoDispose<ValueState<bool>, bool>(
+  () => ValueState((ref) => false),
+);
+final dailySelectedPeopleProvider =
+    NotifierProvider.autoDispose<ValueState<Set<PersonWithCategories>>, Set<PersonWithCategories>>(
+  () => ValueState((ref) => {}),
+);
 
 
 /// The entries of the selected day, grouped by person. Only this day is held:

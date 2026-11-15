@@ -54,7 +54,7 @@ void main() {
 
   test('a new entry shows up in the daily log of that day', () async {
     final anna = await addTestPerson(db, 'Anna');
-    container.read(dailyDateProvider.notifier).state = monday;
+    container.read(dailyDateProvider.notifier).set(monday);
     container.listen(dailyFilteredLogsProvider, (_, _) {});
     await container.read(dailyRawLogsProvider.future);
 

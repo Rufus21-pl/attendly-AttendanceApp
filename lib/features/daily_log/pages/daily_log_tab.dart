@@ -27,18 +27,18 @@ class DailyLogTab extends ShellTab {
 
   static void _toggleEditMode(WidgetRef ref) {
     final isEditing = ref.read(dailyEditModeProvider);
-    ref.read(dailyEditModeProvider.notifier).state = !isEditing;
+    ref.read(dailyEditModeProvider.notifier).set(!isEditing);
     if (isEditing) {
-      ref.read(dailySelectedPeopleProvider.notifier).state = {};
+      ref.read(dailySelectedPeopleProvider.notifier).set({});
     }
   }
 
   static void _selectAll(WidgetRef ref, List<PersonWithCategories> visiblePeople) {
     final currentSet = ref.read(dailySelectedPeopleProvider);
     if (currentSet.length == visiblePeople.length) {
-      ref.read(dailySelectedPeopleProvider.notifier).state = {};
+      ref.read(dailySelectedPeopleProvider.notifier).set({});
     } else {
-      ref.read(dailySelectedPeopleProvider.notifier).state = Set.from(visiblePeople);
+      ref.read(dailySelectedPeopleProvider.notifier).set(Set.from(visiblePeople));
     }
   }
 
@@ -146,7 +146,7 @@ class DailyLogTab extends ShellTab {
   Future<void> _openSearch(BuildContext context, WidgetRef ref) async {
     final selectedDate = await Navigator.of(context).pushNamed<DateTime>(AppRoutes.dailyLogSearch);
     if (selectedDate != null && context.mounted) {
-      ref.read(dailyDateProvider.notifier).state = selectedDate;
+      ref.read(dailyDateProvider.notifier).set(selectedDate);
     }
   }
 }
@@ -168,7 +168,7 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
     } else {
       newSet.add(person);
     }
-    ref.read(dailySelectedPeopleProvider.notifier).state = newSet;
+    ref.read(dailySelectedPeopleProvider.notifier).set(newSet);
   }
 
   Future<void> _selectDate() async {
@@ -183,7 +183,7 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
     );
 
     if (picked != null && picked != currentDate && mounted) {
-      ref.read(dailyDateProvider.notifier).state = picked;
+      ref.read(dailyDateProvider.notifier).set(picked);
       if (ref.read(dailyEditModeProvider)) DailyLogTab._toggleEditMode(ref);
     }
   }
@@ -250,15 +250,15 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
             onPick: _selectDate,
             onPrevious:
                 () =>
-                    ref.read(dailyDateProvider.notifier).state = selectedDate.subtract(
-                      const Duration(days: 1),
+                    ref.read(dailyDateProvider.notifier).set(
+                      selectedDate.subtract(const Duration(days: 1)),
                     ),
             onNext:
                 isTodayOrFuture
                     ? null
                     : () =>
-                        ref.read(dailyDateProvider.notifier).state = selectedDate.add(
-                          const Duration(days: 1),
+                        ref.read(dailyDateProvider.notifier).set(
+                          selectedDate.add(const Duration(days: 1)),
                         ),
           ),
           const _FilterSection(),
@@ -415,7 +415,7 @@ class _FilterSectionState extends ConsumerState<_FilterSection> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      ref.read(dailySearchProvider.notifier).state = _searchController.text;
+      ref.read(dailySearchProvider.notifier).set(_searchController.text);
     });
   }
 
@@ -427,7 +427,7 @@ class _FilterSectionState extends ConsumerState<_FilterSection> {
 
   void _resetFilters() {
     _searchController.clear();
-    ref.read(dailyCategoryFilterProvider.notifier).state = null;
+    ref.read(dailyCategoryFilterProvider.notifier).set(null);
   }
 
   @override
@@ -529,7 +529,7 @@ class _FilterSectionState extends ConsumerState<_FilterSection> {
                 (value: option.category.name, label: option.label, icon: option.icon),
             ],
             selected: selectedCat,
-            onChanged: (category) => ref.read(dailyCategoryFilterProvider.notifier).state = category,
+            onChanged: (category) => ref.read(dailyCategoryFilterProvider.notifier).set(category),
           ),
           if (activeCount > 0)
             Align(
