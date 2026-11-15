@@ -5,6 +5,7 @@ import 'package:attendly/app/startup/views/failed_view.dart';
 import 'package:attendly/app/startup/views/loading_view.dart';
 import 'package:attendly/app/startup/views/migrating_view.dart';
 import 'package:attendly/app/startup/views/permission_view.dart';
+import 'package:attendly/app/startup/views/restore_backup_view.dart';
 import 'package:attendly/app/startup/views/rollover_view.dart';
 import 'package:attendly/app/startup/views/setup_view.dart';
 import 'package:attendly/data/database/database_provider.dart';
@@ -115,7 +116,8 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
     return switch (value) {
       StartupNeedsPermission() =>
         PermissionView(permanentlyDenied: value.permanentlyDenied, isBusy: isBusy),
-      StartupNeedsSetup() => SetupView(isBusy: isBusy),
+      StartupNeedsSetup() => SetupView(isBusy: isBusy, hasBackups: value.backups.isNotEmpty),
+      StartupRestoreAvailable() => RestoreBackupView(key: ObjectKey(value), restore: value, isBusy: isBusy),
       StartupRolloverAvailable() => RolloverView(key: ObjectKey(value)),
       StartupRolloverFailed() => RolloverFailedView(key: ObjectKey(value), error: value.error),
       StartupMigrating() => const MigratingView(),
