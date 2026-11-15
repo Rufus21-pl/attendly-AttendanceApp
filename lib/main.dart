@@ -16,6 +16,9 @@ void main() async {
   runApp(
     const ProviderScope(
       observers: [LoggingProviderObserver()],
+      // Riverpod 3 starts a failed provider again after a delay. The app
+      // decides itself what to do after an error, as before.
+      retry: _noRetry,
       child: AttendlyApp()
     )
   );
@@ -45,3 +48,6 @@ Future<void> _logAppStart() async {
       '${Platform.operatingSystem} ${Platform.operatingSystemVersion} '
       '(${kReleaseMode ? 'release' : 'debug'}) =====');
 }
+
+/// Turns off the automatic retry of failed providers.
+Duration? _noRetry(int retryCount, Object error) => null;

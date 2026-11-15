@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/database/app_database.dart';
+import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/data/tables/enums/gender.dart';
 import 'package:attendly/features/directory/providers/directory_providers.dart';
@@ -101,7 +102,10 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       taken = await ref
           .read(directoryRepositoryProvider)
           .isNameTaken(name, exceptId: widget.person?.id);
-    } on custom_db_exceptions.DatabaseNotReadyException {
+    } catch (e) {
+      // No database is open: nothing to check. Riverpod wraps the exception
+      // when the repository provider is read.
+      if (!isDatabaseNotReady(e)) rethrow;
       return false;
     }
     // Only the latest name counts; the user may have typed on meanwhile.
@@ -216,6 +220,9 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     } on custom_db_exceptions.DatabaseNotReadyException {
       return; // Safely abort if DB is transitioning
     } catch (e, stackTrace) {
+      // Reading the repository while no database is open: Riverpod wraps
+      // the DatabaseNotReadyException.
+      if (isDatabaseNotReady(e)) return;
       if (mounted) AppDialogs.showError(context, e.toString(), stackTrace: stackTrace);
     }
   }

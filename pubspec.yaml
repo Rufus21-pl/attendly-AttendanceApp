@@ -23,7 +23,7 @@ dependencies:
   flutter_markdown_plus: ^1.0.12
   drift: ^2.35.4
   drift_flutter: ^0.3.1
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.5.0
   collection: ^1.19.1
   anchored_list: ^0.3.1
 

@@ -5,6 +5,7 @@ import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/weekly_report/providers/weekly_report_providers.dart';
 import 'package:attendly/features/yearly_report/providers/yearly_report_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/test_database.dart';
@@ -53,7 +54,7 @@ void main() {
 
   test('a new entry shows up in the daily log of that day', () async {
     final anna = await addTestPerson(db, 'Anna');
-    container.read(dailyDateProvider.notifier).state = monday;
+    container.read(dailyDateProvider.notifier).set(monday);
     container.listen(dailyFilteredLogsProvider, (_, _) {});
     await container.read(dailyRawLogsProvider.future);
 

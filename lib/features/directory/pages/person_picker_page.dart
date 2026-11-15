@@ -28,7 +28,7 @@ class _PersonPickerPageState extends ConsumerState<PersonPickerPage> {
 
   void _confirm() {
     // Use the full unfiltered list, not the search-filtered one
-    final allPeople = ref.read(directoryStreamProvider).valueOrNull ?? [];
+    final allPeople = ref.read(directoryStreamProvider).value ?? [];
     final selected = allPeople.where((p) => _selectedPersonIds.contains(p.id)).toList();
     Navigator.of(context).pop(selected);
   }

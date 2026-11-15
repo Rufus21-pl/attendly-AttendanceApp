@@ -4,13 +4,13 @@ import 'package:anchored_list/anchored_list.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/data/database/database_provider.dart';
-import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/directory/widgets/alphabet_index_bar.dart';
 import 'package:attendly/features/directory/widgets/directory_search_field.dart';
 import 'package:attendly/features/directory/widgets/person_tile.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:attendly/shared/providers/value_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Search field, person list and alphabet index, shared by the directory tab
@@ -39,7 +39,7 @@ class PersonDirectoryList extends ConsumerStatefulWidget {
 class _PersonDirectoryListState extends ConsumerState<PersonDirectoryList> {
   final TextEditingController _searchController = TextEditingController();
   final AnchoredListController _listController = AnchoredListController();
-  late final StateController<String> _searchQueryNotifier;
+  late final ValueState<String> _searchQueryNotifier;
   Timer? _searchDebounce;
   int _expandedIndex = -1;
 
@@ -53,7 +53,7 @@ class _PersonDirectoryListState extends ConsumerState<PersonDirectoryList> {
     _searchQueryNotifier = ref.read(directorySearchQueryProvider.notifier);
 
     if (widget.isSelectionMode) {
-      _searchQueryNotifier.state = '';
+      _searchQueryNotifier.set('');
     }
 
     _searchController.text = ref.read(directorySearchQueryProvider);
@@ -63,7 +63,7 @@ class _PersonDirectoryListState extends ConsumerState<PersonDirectoryList> {
   @override
   void dispose() {
     _searchDebounce?.cancel();
-    _searchQueryNotifier.state = '';
+    _searchQueryNotifier.set('');
     _searchController.dispose();
     super.dispose();
   }
@@ -71,13 +71,13 @@ class _PersonDirectoryListState extends ConsumerState<PersonDirectoryList> {
   void _onSearchChanged() {
     final text = _searchController.text;
     _searchDebounce?.cancel();
-    if (text == _searchQueryNotifier.state) return;
+    if (text == _searchQueryNotifier.value) return;
     // Clearing the field shows everyone again right away.
     if (text.isEmpty) {
-      _searchQueryNotifier.state = text;
+      _searchQueryNotifier.set(text);
       return;
     }
-    _searchDebounce = Timer(_searchDelay, () => _searchQueryNotifier.state = text);
+    _searchDebounce = Timer(_searchDelay, () => _searchQueryNotifier.set(text));
   }
 
   void _jumpToLetter(Map<String, int> letterIndexMap, String letter) {
@@ -116,14 +116,14 @@ class _PersonDirectoryListState extends ConsumerState<PersonDirectoryList> {
           controller: _searchController,
           onClear: () {
             _searchController.clear();
-            ref.read(directorySearchQueryProvider.notifier).state = '';
+            ref.read(directorySearchQueryProvider.notifier).set('');
           },
         ),
         Expanded(
           child: asyncPeople.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) {
-              if (e is custom_db_exceptions.DatabaseNotReadyException) {
+              if (isDatabaseNotReady(e)) {
                 return const Center(child: CircularProgressIndicator());
               }
 

@@ -49,8 +49,8 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
   }
 
   void _onStartupChanged(AsyncValue<StartupState>? previous, AsyncValue<StartupState> next) {
-    final wasReady = previous?.valueOrNull is StartupReady && !(previous?.isLoading ?? false);
-    final isReady = next.valueOrNull is StartupReady && !next.isLoading;
+    final wasReady = previous?.value is StartupReady && !(previous?.isLoading ?? false);
+    final isReady = next.value is StartupReady && !next.isLoading;
 
     if (wasReady && !isReady) {
       // Leaving the shell (database switch or error): close every page and
@@ -61,7 +61,7 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
 
     // The new-year banner leads to the year-change question, which already
     // tells the user what happens.
-    if (next.valueOrNull is StartupRolloverAvailable) _switchingDatabase = false;
+    if (next.value is StartupRolloverAvailable) _switchingDatabase = false;
 
     if (!wasReady && isReady && _switchingDatabase) {
       _switchingDatabase = false;
@@ -97,7 +97,7 @@ class _StartupGateState extends ConsumerState<StartupGate> with WidgetsBindingOb
     ref.listen(appStartupProvider, _onStartupChanged);
 
     final startup = ref.watch(appStartupProvider);
-    final value = startup.valueOrNull;
+    final value = startup.value;
     final isBusy = startup.isLoading;
 
     if (value == null) {

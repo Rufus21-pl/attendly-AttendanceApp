@@ -63,7 +63,7 @@ class _WeekListPageState extends ConsumerState<WeekListPage> {
       body: asyncWeeksList.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) {
-            if (error is custom_db_exceptions.DatabaseNotReadyException) {
+            if (isDatabaseNotReady(error)) {
               return const Center(child: CircularProgressIndicator());
             }
             

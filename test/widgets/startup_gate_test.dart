@@ -51,9 +51,9 @@ void main() {
   Future<void> pumpGate(WidgetTester tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        databaseProvider.overrideWith((ref) => DatabaseNotifier(manager)),
+        databaseProvider.overrideWith(() => DatabaseNotifier(manager)),
         storagePermissionServiceProvider.overrideWithValue(permission),
-        settingsProvider.overrideWith((ref) => SettingsNotifier(_FakeSettingsService())),
+        settingsProvider.overrideWith(() => SettingsNotifier(_FakeSettingsService())),
       ],
       child: const MaterialApp(
         localizationsDelegates: [

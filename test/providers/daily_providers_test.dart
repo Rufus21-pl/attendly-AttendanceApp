@@ -29,7 +29,7 @@ void main() {
     await addTestEntry(db, personId: ben, date: monday, category: Category.offer);
     await addTestEntry(db, personId: hannah, date: tuesday, category: Category.open);
 
-    container.read(dailyDateProvider.notifier).state = monday;
+    container.read(dailyDateProvider.notifier).set(monday);
   });
 
   tearDown(() async {
@@ -54,18 +54,18 @@ void main() {
   });
 
   test('search filters people by name, case-insensitive', () async {
-    container.read(dailySearchProvider.notifier).state = 'BE';
+    container.read(dailySearchProvider.notifier).set('BE');
     expect(await filteredLogs(), {'Ben': ['offer']});
   });
 
   test('category filter keeps only matching records and drops empty people', () async {
-    container.read(dailyCategoryFilterProvider.notifier).state = Category.open.name;
+    container.read(dailyCategoryFilterProvider.notifier).set(Category.open.name);
     expect(await filteredLogs(), {'Anna': ['open']});
   });
 
   test('search and category filter combine', () async {
-    container.read(dailySearchProvider.notifier).state = 'anna';
-    container.read(dailyCategoryFilterProvider.notifier).state = Category.offer.name;
+    container.read(dailySearchProvider.notifier).set('anna');
+    container.read(dailyCategoryFilterProvider.notifier).set(Category.offer.name);
     expect(await filteredLogs(), {'Anna': ['offer']});
   });
 
@@ -74,7 +74,7 @@ void main() {
     final mondayLogs = await container.read(dailyRawLogsProvider.future);
     expect(mondayLogs.map((p) => p.name), ['Anna', 'Ben']);
 
-    container.read(dailyDateProvider.notifier).state = tuesday;
+    container.read(dailyDateProvider.notifier).set(tuesday);
     final tuesdayLogs = await container.read(dailyRawLogsProvider.future);
     expect(tuesdayLogs.map((p) => p.name), ['Hannah']);
   });
@@ -82,11 +82,11 @@ void main() {
   test('the day stream is released when nobody watches it', () async {
     final subscription = container.listen(dailyRawLogsProvider, (_, _) {});
     await container.read(dailyRawLogsProvider.future);
-    expect(container.exists(dailyRawLogsProvider), isTrue);
+    expect(container.read(dailyRawLogsProvider.exists), isTrue);
 
     subscription.close();
     await Future<void>.delayed(Duration.zero);
 
-    expect(container.exists(dailyRawLogsProvider), isFalse);
+    expect(container.read(dailyRawLogsProvider.exists), isFalse);
   });
 }

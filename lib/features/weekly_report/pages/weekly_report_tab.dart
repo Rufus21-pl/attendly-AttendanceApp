@@ -1,5 +1,4 @@
 import 'package:attendly/data/database/app_database.dart';
-import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/weekly_report/pages/week_list_page.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
@@ -114,7 +113,7 @@ class WeeklyReportTab extends ShellTab {
 
     // A changed "countable" status needs no refresh: the week stream re-emits.
     if (result != null) {
-      ref.read(selectedWeekProvider.notifier).state = DateTime.parse(result['date']);
+      ref.read(selectedWeekProvider.notifier).set(DateTime.parse(result['date']));
     }
   }
 }
@@ -141,12 +140,12 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
     );
 
     if (picked != null && picked != selectedWeekDate && mounted) {
-      ref.read(selectedWeekProvider.notifier).state = picked;
+      ref.read(selectedWeekProvider.notifier).set(picked);
     }
   }
 
   void _changeWeek(int days) {
-    ref.read(selectedWeekProvider.notifier).state = selectedWeekDate.add(Duration(days: days));
+    ref.read(selectedWeekProvider.notifier).set(selectedWeekDate.add(Duration(days: days)));
   }
 
   @override
@@ -163,7 +162,7 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
       (previous, next) {
         if (next is AsyncError) {
           final error = next.error;
-          if (error != null && error is! custom_db_exceptions.DatabaseNotReadyException) {
+          if (error != null && !isDatabaseNotReady(error)) {
             ref.read(databaseProvider.notifier).reportDatabaseError(error);
           }
         }

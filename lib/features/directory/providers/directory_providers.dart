@@ -2,15 +2,20 @@ import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/features/directory/data/directory_repository.dart';
 import 'package:attendly/features/directory/models/letter_index.dart';
 import 'package:attendly/data/database/database_provider.dart';
+import 'package:attendly/shared/providers/value_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final directoryRepositoryProvider = Provider<DirectoryRepository>((ref) {
   return DirectoryRepository(ref.watch(appDatabaseProvider));
 });
 
-final directorySortAscendingProvider = StateProvider<bool>((ref) => true);
+final directorySortAscendingProvider = NotifierProvider<ValueState<bool>, bool>(
+  () => ValueState((ref) => true),
+);
  
-final directorySearchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
+final directorySearchQueryProvider = NotifierProvider.autoDispose<ValueState<String>, String>(
+  () => ValueState((ref) => ''),
+);
  
  
 final directoryStreamProvider =
@@ -36,6 +41,6 @@ final filteredDirectoryProvider = Provider<AsyncValue<List<DirectoryPeopleData>>
 /// First letter -> list index for the alphabet index bar. Recomputed only
 /// when the filtered list changes, not on every rebuild of the list.
 final directoryLetterIndexProvider = Provider.autoDispose<Map<String, int>>((ref) {
-  final people = ref.watch(filteredDirectoryProvider).valueOrNull ?? const <DirectoryPeopleData>[];
+  final people = ref.watch(filteredDirectoryProvider).value ?? const <DirectoryPeopleData>[];
   return buildLetterIndexMap<DirectoryPeopleData>(people, (p) => p.name);
 });

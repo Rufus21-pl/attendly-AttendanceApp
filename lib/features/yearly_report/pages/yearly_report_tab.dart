@@ -1,4 +1,3 @@
-import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/yearly_report/models/year_stats.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/features/yearly_report/providers/yearly_report_providers.dart';
@@ -58,7 +57,7 @@ class _YearlyReportBodyState extends ConsumerState<_YearlyReportBody> {
 
   /// Database errors go to the startup gate, which shows the failed view.
   Widget _buildErrorState(Object error, StackTrace stackTrace) {
-    if (error is! custom_db_exceptions.DatabaseNotReadyException) {
+    if (!isDatabaseNotReady(error)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) ref.read(databaseProvider.notifier).reportDatabaseError(error);
       });

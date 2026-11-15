@@ -430,7 +430,7 @@ class _SchemaVersionText extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final version = ref.watch(databaseSchemaVersionProvider).valueOrNull;
+    final version = ref.watch(databaseSchemaVersionProvider).value;
     if (version == null) return const SizedBox.shrink();
 
     return Text(

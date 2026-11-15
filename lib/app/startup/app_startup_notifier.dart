@@ -76,7 +76,7 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
     // A permission request or another startup step is already running.
     if (_running > 0) return;
     return _serialized(() async {
-      if (state.valueOrNull is! StartupNeedsPermission) return;
+      if (state.value is! StartupNeedsPermission) return;
       if (await _permission.status() != PermissionState.granted) return;
 
       AppLogger.i(_tag, 'Storage permission granted in the system settings');
@@ -93,7 +93,7 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
   Future<void> createDatabase() => _serialized(() async {
     final previous = state;
     AppLogger.i(_tag, 'User requested a new database');
-    state = const AsyncLoading<StartupState>().copyWithPrevious(previous);
+    state = const AsyncLoading<StartupState>();
     try {
       await _database.createDatabase();
       state = AsyncData(await _ready());
@@ -132,7 +132,7 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
 
   Future<void> retry() async {
     AppLogger.i(_tag, 'User tapped retry');
-    final current = state.valueOrNull;
+    final current = state.value;
     final selectedDb = current is StartupFailed ? current.selectedDb : null;
     if (selectedDb != null) return openDatabaseFile(selectedDb);
     return openDefault();
@@ -204,7 +204,7 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
   /// Shows the loading screen while [open] runs. Coming from the shell, the
   /// screen stays for [_minimumSwitchDuration] so the user sees the switch.
   Future<void> _switchDatabase(Future<StartupState> Function() open) async {
-    final fromShell = state.valueOrNull is StartupReady;
+    final fromShell = state.value is StartupReady;
     final startedAt = DateTime.now();
     state = const AsyncLoading();
 

@@ -35,9 +35,9 @@ void main() {
     manager = FakeDatabaseManager();
     permission = FakeStoragePermissionService();
     container = ProviderContainer(overrides: [
-      databaseProvider.overrideWith((ref) => DatabaseNotifier(manager)),
+      databaseProvider.overrideWith(() => DatabaseNotifier(manager)),
       storagePermissionServiceProvider.overrideWithValue(permission),
-      settingsProvider.overrideWith((ref) => SettingsNotifier(_FakeSettingsService())),
+      settingsProvider.overrideWith(() => SettingsNotifier(_FakeSettingsService())),
     ]);
   });
 

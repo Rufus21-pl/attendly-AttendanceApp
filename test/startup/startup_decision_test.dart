@@ -1,5 +1,6 @@
 import 'package:attendly/app/startup/startup_decision.dart';
 import 'package:attendly/data/database/database_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../fakes/fake_database_manager.dart';
@@ -7,15 +8,19 @@ import '../fakes/fake_database_manager.dart';
 void main() {
   group('decideStartup', () {
     late FakeDatabaseManager manager;
+    late ProviderContainer container;
     late DatabaseNotifier notifier;
 
     setUp(() {
       manager = FakeDatabaseManager();
-      notifier = DatabaseNotifier(manager);
+      container = ProviderContainer(overrides: [
+        databaseProvider.overrideWith(() => DatabaseNotifier(manager)),
+      ]);
+      notifier = container.read(databaseProvider.notifier);
     });
 
     tearDown(() async {
-      notifier.dispose();
+      container.dispose();
       await manager.closeDatabase();
     });
 
@@ -45,45 +50,49 @@ void main() {
 
   group('DatabaseNotifier', () {
     late FakeDatabaseManager manager;
+    late ProviderContainer container;
     late DatabaseNotifier notifier;
 
     setUp(() {
       manager = FakeDatabaseManager();
-      notifier = DatabaseNotifier(manager);
+      container = ProviderContainer(overrides: [
+        databaseProvider.overrideWith(() => DatabaseNotifier(manager)),
+      ]);
+      notifier = container.read(databaseProvider.notifier);
     });
 
     tearDown(() async {
-      notifier.dispose();
+      container.dispose();
       await manager.closeDatabase();
     });
 
     test('openDatabase marks the state ready', () async {
       await notifier.openDatabase();
-      expect(notifier.state.isReady, isTrue);
-      expect(notifier.state.isTemporaryDb, isFalse);
-      expect(notifier.state.showNewYearBanner, isFalse);
-      expect(notifier.state.dbYear, 2026);
+      expect(container.read(databaseProvider).isReady, isTrue);
+      expect(container.read(databaseProvider).isTemporaryDb, isFalse);
+      expect(container.read(databaseProvider).showNewYearBanner, isFalse);
+      expect(container.read(databaseProvider).dbYear, 2026);
     });
 
     test('openDatabaseWithBanner keeps the new-year banner visible', () async {
       await notifier.openDatabaseWithBanner();
-      expect(notifier.state.isReady, isTrue);
-      expect(notifier.state.showNewYearBanner, isTrue);
+      expect(container.read(databaseProvider).isReady, isTrue);
+      expect(container.read(databaseProvider).showNewYearBanner, isTrue);
     });
 
     test('a failing open leaves the state not ready', () async {
       manager.openError = Exception('broken file');
       await expectLater(notifier.openDatabase(), throwsException);
-      expect(notifier.state.isReady, isFalse);
+      expect(container.read(databaseProvider).isReady, isFalse);
     });
 
     test('reportDatabaseError drops the database and keeps the error', () async {
       await notifier.openDatabase();
       final error = Exception('stream failed');
       notifier.reportDatabaseError(error);
-      expect(notifier.state.isReady, isFalse);
-      expect(notifier.state.manager, isNull);
-      expect(notifier.state.dbError, same(error));
+      expect(container.read(databaseProvider).isReady, isFalse);
+      expect(container.read(databaseProvider).manager, isNull);
+      expect(container.read(databaseProvider).dbError, same(error));
     });
   });
 }

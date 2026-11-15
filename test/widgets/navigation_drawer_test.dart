@@ -26,7 +26,7 @@ void main() {
       tester,
       const AppShell(),
       db: db,
-      overrides: [selectedTabProvider.overrideWith((ref) => AppTab.directory)],
+      overrides: [selectedTabProvider.overrideWithBuild((ref, _) => AppTab.directory)],
     );
   }
 

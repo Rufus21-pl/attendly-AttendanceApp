@@ -40,17 +40,17 @@ void main() {
   });
 
   test('search is case-insensitive and matches anywhere in the name', () async {
-    container.read(directorySearchQueryProvider.notifier).state = 'ANN';
+    container.read(directorySearchQueryProvider.notifier).set('ANN');
     expect(await filteredNames(), ['Anna', 'Hannah']);
   });
 
   test('search without a match returns an empty list', () async {
-    container.read(directorySearchQueryProvider.notifier).state = 'zzz';
+    container.read(directorySearchQueryProvider.notifier).set('zzz');
     expect(await filteredNames(), isEmpty);
   });
 
   test('descending sort reverses the order', () async {
-    container.read(directorySortAscendingProvider.notifier).state = false;
+    container.read(directorySortAscendingProvider.notifier).set(false);
     expect(await filteredNames(), ['Hannah', 'Benjamin', 'Anna']);
   });
 
@@ -59,7 +59,7 @@ void main() {
     await container.read(directoryStreamProvider.future);
     expect(container.read(directoryLetterIndexProvider), {'A': 0, 'B': 1, 'H': 2});
 
-    container.read(directorySortAscendingProvider.notifier).state = false;
+    container.read(directorySortAscendingProvider.notifier).set(false);
     await container.read(directoryStreamProvider.future);
     expect(container.read(directoryLetterIndexProvider), {'H': 0, 'B': 1, 'A': 2});
   });
