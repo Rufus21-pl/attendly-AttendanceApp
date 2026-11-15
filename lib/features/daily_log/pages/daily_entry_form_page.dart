@@ -261,6 +261,9 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
     } on custom_db_exceptions.DatabaseException catch (e) {
       if (mounted) AppDialogs.showError(context, e.toString());
     } catch (e, stackTrace) {
+      // Reading the repository while no database is open: Riverpod wraps
+      // the DatabaseNotReadyException.
+      if (isDatabaseNotReady(e)) return;
       if (mounted) AppDialogs.showError(context, e.toString(), stackTrace: stackTrace);
     }
   }

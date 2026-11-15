@@ -4,6 +4,7 @@ import 'package:attendly/features/daily_log/models/person_with_categories.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 
 final dailyRepositoryProvider = Provider<DailyRepository>((ref) {

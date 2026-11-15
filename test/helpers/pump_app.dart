@@ -4,6 +4,7 @@ import 'package:attendly/data/database/database_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Pumps [child] inside a localized MaterialApp whose providers read [db].

@@ -3,7 +3,7 @@ import 'package:attendly/data/settings/settings_service.dart';
 import 'package:attendly/features/settings/providers/settings_state.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 
 class SettingsNotifier extends StateNotifier<SettingsState> {

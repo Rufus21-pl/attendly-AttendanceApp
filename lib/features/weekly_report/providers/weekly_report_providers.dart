@@ -3,6 +3,7 @@ import 'package:attendly/features/weekly_report/data/weekly_repository.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 final weeklyRepositoryProvider = Provider<WeeklyRepository>((ref) {
   return WeeklyRepository(ref.watch(appDatabaseProvider));

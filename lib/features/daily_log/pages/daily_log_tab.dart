@@ -1,7 +1,6 @@
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
-import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/daily_log/models/category_record.dart';
 import 'package:attendly/features/daily_log/models/person_with_categories.dart';
 import 'package:attendly/features/daily_log/pages/daily_entry_form_page.dart';
@@ -53,7 +52,7 @@ class DailyLogTab extends ShellTab {
     final isOnToday = DateUtils.isSameDay(selectedDate, getScopedDate(dbYear: dbYear));
 
     // Grab the list if available to check lengths
-    final visiblePeople = asyncFilteredData.valueOrNull ?? [];
+    final visiblePeople = asyncFilteredData.value ?? [];
 
     return TabAppBar(
       title: AppLocalizations.of(context).dailyLogs,
@@ -230,7 +229,7 @@ class _DailyLogBodyState extends ConsumerState<_DailyLogBody> {
     ref.listen<AsyncValue<List<PersonWithCategories>?>>(dailyRawLogsProvider, (prev, next) {
       if (next is AsyncError) {
         final error = next.error;
-        if (error != null && error is! custom_db_exceptions.DatabaseNotReadyException) {
+        if (error != null && !isDatabaseNotReady(error)) {
           ref.read(databaseProvider.notifier).reportDatabaseError(error);
         }
       }

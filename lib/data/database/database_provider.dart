@@ -6,6 +6,8 @@ import 'package:attendly/data/database/database_manager_interface.dart';
 import 'package:attendly/data/database/database_state.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderException;
  
  
 class DatabaseNotifier extends StateNotifier<DatabaseState> {
@@ -115,6 +117,21 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   
   return state.manager!.databaseConnection;
 });
+
+/// True when [error] is a [DatabaseNotReadyException], also when Riverpod
+/// wrapped it.
+///
+/// [appDatabaseProvider] throws the exception while no database is open. A
+/// provider or a widget that reads a failed provider does not get that error
+/// itself: Riverpod puts it into a [ProviderException], once for every
+/// provider in between. Use this instead of `error is DatabaseNotReadyException`.
+bool isDatabaseNotReady(Object? error) {
+  var cause = error;
+  while (cause is ProviderException) {
+    cause = cause.exception;
+  }
+  return cause is DatabaseNotReadyException;
+}
 
 /// The schema version of the open database file, e.g. for the settings page.
 /// Fails with [DatabaseNotReadyException] while no database is open.

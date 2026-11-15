@@ -1,5 +1,4 @@
 import 'package:attendly/data/database/app_database.dart';
-import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/weekly_report/pages/week_list_page.dart';
 import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/database/database_provider.dart';
@@ -163,7 +162,7 @@ class _WeeklyReportBodyState extends ConsumerState<_WeeklyReportBody> {
       (previous, next) {
         if (next is AsyncError) {
           final error = next.error;
-          if (error != null && error is! custom_db_exceptions.DatabaseNotReadyException) {
+          if (error != null && !isDatabaseNotReady(error)) {
             ref.read(databaseProvider.notifier).reportDatabaseError(error);
           }
         }

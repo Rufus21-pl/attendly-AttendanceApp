@@ -82,11 +82,11 @@ void main() {
   test('the day stream is released when nobody watches it', () async {
     final subscription = container.listen(dailyRawLogsProvider, (_, _) {});
     await container.read(dailyRawLogsProvider.future);
-    expect(container.exists(dailyRawLogsProvider), isTrue);
+    expect(container.read(dailyRawLogsProvider.exists), isTrue);
 
     subscription.close();
     await Future<void>.delayed(Duration.zero);
 
-    expect(container.exists(dailyRawLogsProvider), isFalse);
+    expect(container.read(dailyRawLogsProvider.exists), isFalse);
   });
 }

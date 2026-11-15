@@ -5,6 +5,7 @@ import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/weekly_report/providers/weekly_report_providers.dart';
 import 'package:attendly/features/yearly_report/providers/yearly_report_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/test_database.dart';

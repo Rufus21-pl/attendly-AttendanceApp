@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 /// The tabs of the app shell, in drawer/rail order.
 enum AppTab { directory, dailyLog, weeklyReport, yearlyReport }

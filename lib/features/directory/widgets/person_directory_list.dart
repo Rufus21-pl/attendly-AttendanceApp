@@ -4,7 +4,6 @@ import 'package:anchored_list/anchored_list.dart';
 import 'package:attendly/core/responsive/responsive.dart';
 import 'package:attendly/data/database/app_database.dart';
 import 'package:attendly/data/database/database_provider.dart';
-import 'package:attendly/data/database/exceptions.dart' as custom_db_exceptions;
 import 'package:attendly/features/directory/providers/directory_providers.dart';
 import 'package:attendly/features/directory/widgets/alphabet_index_bar.dart';
 import 'package:attendly/features/directory/widgets/directory_search_field.dart';
@@ -12,6 +11,7 @@ import 'package:attendly/features/directory/widgets/person_tile.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 /// Search field, person list and alphabet index, shared by the directory tab
 /// and the person picker.
@@ -123,7 +123,7 @@ class _PersonDirectoryListState extends ConsumerState<PersonDirectoryList> {
           child: asyncPeople.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) {
-              if (e is custom_db_exceptions.DatabaseNotReadyException) {
+              if (isDatabaseNotReady(e)) {
                 return const Center(child: CircularProgressIndicator());
               }
 
