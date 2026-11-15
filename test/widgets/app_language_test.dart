@@ -32,7 +32,7 @@ void main() {
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        databaseProvider.overrideWith((ref) => DatabaseNotifier(manager)),
+        databaseProvider.overrideWith(() => DatabaseNotifier(manager)),
         storagePermissionServiceProvider.overrideWithValue(permission),
         settingsProvider.overrideWith((ref) => SettingsNotifier(_GermanSettingsService())),
       ],
