@@ -176,3 +176,14 @@ bool isDatabaseNotReady(Object? error) {
 final databaseSchemaVersionProvider = FutureProvider.autoDispose<int>((ref) {
   return ref.watch(appDatabaseProvider).readSchemaVersion();
 });
+
+/// The newest backup of the open database, or null when it has none or no
+/// database is open. Read when a page shows it, and again after
+/// `ref.invalidate`.
+final lastBackupProvider = FutureProvider.autoDispose<BackupInfo?>((ref) async {
+  final state = ref.watch(databaseProvider);
+  if (!state.isReady) return null;
+
+  final backups = await ref.read(databaseProvider.notifier).listBackupsOfCurrentDatabase();
+  return backups.where((backup) => backup.kind == BackupKind.latest).firstOrNull;
+});
