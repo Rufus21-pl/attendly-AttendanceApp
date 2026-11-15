@@ -25,6 +25,13 @@ abstract interface class DatabaseManagerInterface {
 
   Future<String> getSettingsJsonContent();
 
+  /// True when the open database was opened, but the check found damage in
+  /// it. No backup is written for such a database.
+  bool get isOpenDatabaseDamaged;
+
+  /// Writes a backup of the open database now and waits for it.
+  Future<void> backupNow();
+
   /// Writes a backup that is waiting for its delay now, e.g. before the app
   /// goes to the background. Does nothing when no backup is requested.
   Future<void> flushBackup();
