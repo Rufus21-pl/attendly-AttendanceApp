@@ -4,11 +4,11 @@ import 'package:attendly/app/startup/views/startup_dialogs.dart';
 import 'package:attendly/app/startup/views/status_scaffold.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/responsive/responsive.dart';
+import 'package:attendly/core/utils/date_utils.dart';
 import 'package:attendly/data/backup/backup_info.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 /// The main database is missing or damaged and a backup can replace it.
 /// The user selects one of the backups and restores it.
@@ -17,9 +17,6 @@ class RestoreBackupView extends ConsumerStatefulWidget {
   final bool isBusy;
 
   const RestoreBackupView({super.key, required this.restore, this.isBusy = false});
-
-  /// How the time of a backup is shown, in the list and in the dialog.
-  static String formatTime(DateTime time) => DateFormat('dd.MM.yyyy HH:mm').format(time);
 
   @override
   ConsumerState<RestoreBackupView> createState() => _RestoreBackupViewState();
@@ -32,7 +29,7 @@ class _RestoreBackupViewState extends ConsumerState<RestoreBackupView> {
   Future<void> _restore() async {
     final localizations = AppLocalizations.of(context);
     final backup = _selected;
-    final confirmed = await StartupDialogs.confirmRestore(context, RestoreBackupView.formatTime(backup.modified));
+    final confirmed = await StartupDialogs.confirmRestore(context, dateTimeToDisplayString(backup.modified));
     if (!(confirmed ?? false)) {
       AppLogger.i('Startup', 'User cancelled the restore');
       return;
@@ -186,7 +183,7 @@ class _BackupTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${RestoreBackupView.formatTime(backup.modified)} · ${_formatSize(backup.sizeBytes)}',
+                      '${dateTimeToDisplayString(backup.modified)} · ${_formatSize(backup.sizeBytes)}',
                       style: TextStyle(
                         fontSize: responsive.bodyFontSize - 3,
                         color: scheme.onSurface.withValues(alpha: 0.6),
