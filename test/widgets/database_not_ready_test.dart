@@ -5,10 +5,10 @@ import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/data/database/exceptions.dart';
 import 'package:attendly/features/weekly_report/pages/week_list_page.dart';
 import 'package:attendly/l10n/app_localizations_delegate.dart';
+import 'package:attendly/shared/providers/value_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -65,7 +65,7 @@ void main() {
     late AppDatabase db;
 
     /// False after the database was closed, like at the start of a switch.
-    final databaseOpen = StateProvider<bool>((ref) => true);
+    final databaseOpen = NotifierProvider<ValueState<bool>, bool>(() => ValueState((ref) => true));
 
     setUp(() => db = createTestDatabase());
     tearDown(() => db.close());
@@ -91,7 +91,7 @@ void main() {
         );
         expect(find.byType(CircularProgressIndicator), findsNothing);
 
-        container.read(databaseOpen.notifier).state = false;
+        container.read(databaseOpen.notifier).set(false);
         await settleStreams(tester);
 
         expect(container.read(databaseProvider).dbError, isNull);
