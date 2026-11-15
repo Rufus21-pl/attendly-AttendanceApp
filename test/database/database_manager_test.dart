@@ -78,7 +78,7 @@ void main() {
       expect(dbFile(currentYear).existsSync(), isTrue);
       expect(manager.currentDbPath, dbFile(currentYear).path);
       expect(manager.dbYear, currentYear);
-      expect(await manager.databaseConnection.readSchemaVersion(), 3);
+      expect(await manager.databaseConnection.readSchemaVersion(), manager.databaseConnection.schemaVersion);
 
       final settings = readSettings();
       expect(settings['file_path'], dbFile(currentYear).path);

@@ -16,15 +16,15 @@ void main() {
 
   setUpAll(() => verifier = SchemaVerifier(GeneratedHelper()));
 
-  test('v2 -> v3 matches the v3 schema', () async {
+  test('v2 -> v4 matches the v4 schema', () async {
     final connection = await verifier.startAt(2);
     final db = AppDatabase(connection);
 
-    await verifier.migrateAndValidate(db, 3);
+    await verifier.migrateAndValidate(db, 4);
     await db.close();
   });
 
-  test('v2 -> v3 keeps people and entries', () async {
+  test('v2 -> v4 keeps people and entries', () async {
     final schema = await verifier.schemaAt(2);
 
     final oldDb = v2.DatabaseAtV2(schema.newConnection());
@@ -39,7 +39,7 @@ void main() {
     await oldDb.close();
 
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 3);
+    await verifier.migrateAndValidate(db, 4);
 
     final people = await db.readDao.watchAllPerson(true).first;
     expect(people.map((p) => p.name), ['Anna']);
@@ -48,7 +48,7 @@ void main() {
     await db.close();
   });
 
-  test('v2 -> v3 also works when an interrupted run left the indexes', () async {
+  test('v2 -> v4 also works when an interrupted run left the indexes', () async {
     final schema = await verifier.schemaAt(2);
 
     final oldDb = v2.DatabaseAtV2(schema.newConnection());
@@ -59,7 +59,7 @@ void main() {
     await oldDb.close();
 
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 3);
+    await verifier.migrateAndValidate(db, 4);
     await db.close();
   });
 
