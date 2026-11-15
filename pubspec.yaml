@@ -63,3 +63,4 @@ flutter:
     - assets/logo.png
     - assets/attendly_docs.pdf
     - assets/changelogs/
+    - LICENSE
