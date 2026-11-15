@@ -1,3 +1,5 @@
+import 'dart:io';
+
 /// Base class for all database-related exceptions.
 abstract class DatabaseException implements Exception {
   final String message;
@@ -73,4 +75,11 @@ class DatabaseCorruptedException extends DatabaseException {
   final String path;
 
   DatabaseCorruptedException(this.path) : super("The database file is damaged: $path");
+}
+
+/// Thrown when the database file to open does not exist. The app never
+/// creates a database by opening it.
+class DatabaseFileMissingException extends FileSystemException {
+  const DatabaseFileMissingException(String path)
+      : super("Database file does not exist. It must be created explicitly.", path);
 }
