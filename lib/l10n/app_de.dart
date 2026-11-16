@@ -640,19 +640,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String settingsErrorKey(String key) => 'Eine kritische Einstellung ("$key") fehlt in der Einstellungsdatei. Bitte versuchen Sie, die Anwendung neu zu installieren.';
 
-  // missing keys for help page
-  @override
-  String get help => 'Hilfe';
-
-  @override
-  String get openUserManual => 'Benutzerhandbuch öffnen';
-
-  @override
-  String get externalPdfAppHint => 'Öffnet mit einer externen PDF-App (z. B. Google PDF Viewer).';
-
-  @override
-  String get failedToOpenPdf => 'PDF konnte nicht geöffnet werden.';
-
   @override
   String getAppsVerision(String version) => "Versionsnummer $version";
 
