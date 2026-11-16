@@ -103,7 +103,7 @@ The app keeps backup copies of each database in `Documents/AttendlyDb/backup/`.
 
 The app offers a restore by itself when it starts:
 
-- **The database cannot be opened or is missing:** the restore screen lists the backups of that database. Select one and tap *Restore backup*.
+- **The database cannot be opened, is empty (0 bytes) or is missing:** the restore screen lists the backups of that database. Select one and tap *Restore backup*.
 - **The database opens, but a check finds damage:** the same screen appears, with *Continue with this database* as a second option.
 - **First start with no database, but with backups** (for example after a new installation): the start screen has the button *Restore from backup*.
 
