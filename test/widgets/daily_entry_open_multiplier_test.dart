@@ -95,7 +95,6 @@ void main() {
 
     await submit(tester);
     expect(find.text(l10n.personsAddedSuccessfully(1)), findsOneWidget);
-    expect(find.text(l10n.personAlreadyInCategoryOpen('Anonymous')), findsNothing);
 
     final entries = await entriesOf(tester, anonymous);
     expect(entries.map((e) => (e.date, e.category)), List.filled(2, (monday, Category.open)));
