@@ -148,16 +148,22 @@ void main() {
       await unmount(tester);
     });
 
-    testWidgets('changing to a second "open" shows the duplicate message', (tester) async {
-      final (_, record) = await recordFor(tester, Category.offer);
+    testWidgets('changing to a second "open" is saved', (tester) async {
+      final (anna, record) = await recordFor(tester, Category.offer);
 
-      await openPage(tester, DailyEntryFormPage(mode: DailyEntryFormMode.edit, record: record));
+      final results = await openPage(tester, DailyEntryFormPage(mode: DailyEntryFormMode.edit, record: record));
       await chooseCategory(tester, l10n.open);
       await tester.tap(find.text(l10n.saveChanges));
       await settleStreams(tester);
       await tester.pumpAndSettle();
 
-      expect(find.text(l10n.personAlreadyInCategoryOpen('Anna')), findsOneWidget);
+      expect(find.text(l10n.recordUpdatedSuccessfully), findsOneWidget);
+      await tester.tap(find.text(l10n.ok));
+      await tester.pumpAndSettle();
+
+      expect(results, [true]);
+      final entries = await entriesOf(tester, anna);
+      expect(entries.map((e) => e.category), [Category.open, Category.open]);
       await unmount(tester);
     });
   });
