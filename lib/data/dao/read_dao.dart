@@ -71,20 +71,6 @@ class ReadDao extends DatabaseAccessor<AppDatabase> with _$ReadDaoMixin {
     return entry?.category;
   }
 
-  /// Stops at the first row: a person can have several "open" entries on one
-  /// day, and getSingleOrNull throws for more than one row.
-  Future<bool> hasOpenCategoryForDate(int personId, DateTime date) async {
-    final query = select(dailyEntry)
-      ..where((t) =>
-        t.personId.equals(personId) &
-        t.date.equals(db.dateOnlyConverter.toSql(date)) &
-        t.category.equals(Category.open.name)
-      )
-      ..limit(1);
-    final result = await query.getSingleOrNull();
-    return result != null;
-  }
-
   Future<int> countEntriesForPerson(int personId) async {
     final countExp = dailyEntry.personId.count();
     final query = selectOnly(dailyEntry)
