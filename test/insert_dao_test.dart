@@ -74,37 +74,8 @@ void main() {
       );
     });
 
-    test('throws DuplicateDailyEntryException for multiple "open" entries on same day', () async {
-      final testDate = DateTime(2024, 1, 1);
-      
-      // 1. Setup: Create a person first
-      await db.insertDao.insertDirPerson(DirectoryPeopleCompanion.insert(
-        name: 'Test User',
-        birthday: DateTime(2000, 1, 1),
-        gender: Gender.m,
-        migration: false,
-      ));
-      final person = (await db.readDao.findPeopleByName('Test User')).first;
-
-      // 2. Insert the first "open" entry
-      await db.insertDao.insertDailyEntry(
-        personId: person.id,
-        date: testDate,
-        category: Category.open,
-      );
-
-      // 3. Attempt to insert a second "open" entry for the same person/date
-      expect(
-        () => db.insertDao.insertDailyEntry(
-          personId: person.id,
-          date: testDate,
-          category: Category.open,
-        ),
-        throwsA(isA<DuplicateDailyEntryException>()),
-      );
-    });
-
-    test('successfully inserts multiple entries if category is NOT "open"', () async {
+    // The "open" category has its own tests in open_multiplier_test.dart.
+    test('successfully inserts multiple entries of one category on one day', () async {
       // Setup person
       await db.insertDao.insertDirPerson(DirectoryPeopleCompanion.insert(
         name: 'Multi Entry User',
@@ -115,8 +86,7 @@ void main() {
       final person = (await db.readDao.findPeopleByName('Multi Entry User')).first;
       final testDate = DateTime(2024, 1, 1);
 
-      // This should NOT throw an exception because category is not Category.open
-      // (My db logic only blocks duplicates for 'open')
+      // This should NOT throw an exception: a category can be added several times.
       await db.insertDao.insertDailyEntry(
         personId: person.id,
         date: testDate,
@@ -149,24 +119,6 @@ void main() {
       expect(entries.length, 2);
       expect(entries.any((e) => e.recordId == 1), true);
       expect(entries.any((e) => e.recordId == 2), true);
-    });
-
-    test('insertDailyEntry skips duplicate "Open" category entries', () async {
-      final pId = await db.into(db.directoryPeople).insert(
-        DirectoryPeopleCompanion.insert(name: 'User B', birthday: DateTime(2010, 1, 1), gender: Gender.m, migration: false)
-      );
-      final date = DateTime(2026, 05, 20);
-
-      // First insert
-      await db.insertDao.insertDailyEntry(personId: pId, date: date, category: Category.open);
-
-      expect(
-        () => db.insertDao.insertDailyEntry(personId: pId, date: date, category: Category.open),
-        throwsA(isA<DuplicateDailyEntryException>()),
-      );
-
-      final entries = await db.readDao.getDailyEntriesByPersonId(pId);
-      expect(entries.length, 1);
     });
 
     test('insertDailyEntry automatically triggers weekly counter updates', () async {
