@@ -115,8 +115,10 @@ void main() {
   });
 
   testWidgets('a tap reports when no new backup was written', (tester) async {
-    // A damaged database gets no backup: the old file stays.
-    manager.backups = [_backup('db_2026.db', BackupKind.latest, DateTime(2026, 11, 15, 23, 56))];
+    // A damaged database gets no backup: the old file stays. Its time is
+    // relative to the clock of the machine, so the test passes at any time.
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    manager.backups = [_backup('db_2026.db', BackupKind.latest, yesterday)];
     await pumpSettings(tester);
 
     await tester.tap(find.text(l10n.databaseBackup));
