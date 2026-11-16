@@ -55,8 +55,6 @@ class DailyRepository {
         description: description,
         multiplier: multiplier
       );
-    } on DuplicateDailyEntryException {
-      rethrow;
     } on PersonNotFoundException {
       rethrow;
     } catch (e, stack) {
