@@ -115,11 +115,20 @@ class DatabaseManager implements DatabaseManagerInterface {
       throw DatabaseFileMissingException(targetFile.path);
     }
 
-    AppLogger.i(_tag, "Opening ${targetFile.path} (${await targetFile.length()} bytes"
+    final sizeBytes = await targetFile.length();
+    AppLogger.i(_tag, "Opening ${targetFile.path} ($sizeBytes bytes"
         "${file != null ? ', selected by user' : ''})");
 
     await closeDatabase();
     _currentDbFile = targetFile;
+
+    // SQLite takes an empty file for a new database and creates the tables
+    // in it. The empty database would then replace the backup with the data.
+    if (sizeBytes == 0) {
+      AppLogger.e(_tag, "Cannot open ${targetFile.path}: the file is empty");
+      throw DatabaseCorruptedException(targetFile.path);
+    }
+
     _db = AppDatabase(AppDatabase.openConnection(targetFile), onMigrationStarted: onMigrationStarted);
 
     final stopwatch = Stopwatch()..start();
