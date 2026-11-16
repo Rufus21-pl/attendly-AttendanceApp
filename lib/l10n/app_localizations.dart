@@ -206,8 +206,6 @@ abstract class AppLocalizations {
   String get personCategoryDateRequired;
   String personsFailedToAdd(int failCount, int successCount);
   String personsAddedSuccessfully(int successCount);
-  String personAlreadyInCategoryOpen(String name);
-  String personsAlreadyInCategoryOpen(int count, String names);
   String get numberOfEntries;
 
   // For year_stats_page.dart

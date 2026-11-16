@@ -40,6 +40,10 @@ class InsertDao extends DatabaseAccessor<AppDatabase> with _$InsertDaoMixin, Sha
 
   // --- 2. Daily Table Insertion ---
   /// Replaces dailyTable.
+  ///
+  /// Adds [multiplier] entries of [category] for the person on [date]. Every
+  /// category can be added several times, also "open": an anonymous person
+  /// stands for several visitors of one day.
   Future<void> insertDailyEntry({
     required int personId,
     required DateTime date,
@@ -51,21 +55,11 @@ class InsertDao extends DatabaseAccessor<AppDatabase> with _$InsertDaoMixin, Sha
       throw ArgumentError.value(multiplier, 'multiplier', 'must be >= 1');
     }
 
-    if (category == Category.open && multiplier != 1) {
-      throw ArgumentError.value(multiplier, 'multiplier', 'open allows only one entry per person per day');
-    }
-
     await transaction(() async {
       // Check if person exists
       final person = await db.readDao.getPersonById(personId);
       if (person == null) {
         throw PersonNotFoundException(personId);
-      }
-
-      if (category == Category.open) {        
-        if (await db.readDao.hasOpenCategoryForDate(personId, date)) {
-          throw DuplicateDailyEntryException();
-        }
       }
 
       for (int i = 0; i < multiplier; i++) {

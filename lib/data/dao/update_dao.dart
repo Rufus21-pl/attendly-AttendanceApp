@@ -123,14 +123,6 @@ class UpdateDao extends DatabaseAccessor<AppDatabase> with _$UpdateDaoMixin, Sha
       final oldEntry = row.readTable(dailyEntry);
       final person = row.readTable(directoryPeople);
 
-      // do not allow to update a category to open if the person has already one for the day
-      if (newCategory == Category.open && oldEntry.category != Category.open) {
-        final hasDuplicate = await db.readDao.hasOpenCategoryForDate(personId, date);
-        if (hasDuplicate) {
-          throw DuplicateDailyEntryException();
-        }
-      }
-
       // Only perform logic if the category actually changed
       if (oldEntry.category != newCategory) {
         final weekDate = getFirstDateOfWeek(date);

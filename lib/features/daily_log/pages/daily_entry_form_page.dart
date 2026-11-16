@@ -53,13 +53,6 @@ class DailyEntryFormPage extends ConsumerStatefulWidget {
 class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
   static final DateFormat _dateFormat = DateFormat('dd.MM.yyyy');
 
-  /// Categories that can be counted several times at once.
-  static const Set<Category> _multiplierCategories = {
-    Category.parent,
-    Category.other,
-    Category.offer,
-  };
-
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _multiplierController = TextEditingController(text: '1');
@@ -71,7 +64,10 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
 
   bool get _isAdd => widget.mode == DailyEntryFormMode.add;
   bool get _peopleLocked => widget.preselectedPersons.isNotEmpty;
-  bool get _showMultiplier => _isAdd && _multiplierCategories.contains(_category);
+
+  /// Every category can be counted several times at once, also "open" (for
+  /// example several anonymous visitors of one day).
+  bool get _showMultiplier => _isAdd && _category != null;
 
   @override
   void initState() {
@@ -182,7 +178,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
     final repo = ref.read(dailyRepositoryProvider);
     int successCount = 0;
     final failedPersons = <String>[];
-    final duplicatePersons = <String>[];
 
     AppDialogs.showLoading(context, localizations.save);
     try {
@@ -196,9 +191,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
             multiplier: multiplier,
           );
           successCount++;
-        } on custom_db_exceptions.DuplicateDailyEntryException {
-          duplicatePersons.add(person.name);
-          AppLogger.d("Daily", "Person ${person.id} already has this category, skipped");
         } on custom_db_exceptions.DatabaseNotReadyException {
           rethrow;
         } catch (e, stackTrace) {
@@ -214,12 +206,7 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
     if (!mounted) return;
     AppDialogs.hideLoading(context);
 
-    if (duplicatePersons.isNotEmpty) {
-      await AppDialogs.showInfo(
-        context,
-        localizations.personsAlreadyInCategoryOpen(duplicatePersons.length, duplicatePersons.join(', ')),
-      );
-    } else if (failedPersons.isNotEmpty) {
+    if (failedPersons.isNotEmpty) {
       AppDialogs.showError(context,
           "${localizations.personsFailedToAdd(failedPersons.length, successCount)}\n\nDetails:\n${failedPersons.join('\n\n')}");
     } else {
@@ -249,13 +236,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
 
       await AppDialogs.showSuccess(context, localizations.recordUpdatedSuccessfully);
       if (mounted) Navigator.of(context).pop(true);
-    } on custom_db_exceptions.DuplicateDailyEntryException {
-      AppLogger.d("Daily", "Not adding twice to the open category");
-      if (!mounted) return;
-      await AppDialogs.showInfo(
-        context,
-        localizations.personAlreadyInCategoryOpen(record.personName ?? localizations.unknown),
-      );
     } on custom_db_exceptions.DatabaseNotReadyException {
       return;
     } on custom_db_exceptions.DatabaseException catch (e) {

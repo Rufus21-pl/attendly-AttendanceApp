@@ -55,8 +55,6 @@ class DailyRepository {
         description: description,
         multiplier: multiplier
       );
-    } on DuplicateDailyEntryException {
-      rethrow;
     } on PersonNotFoundException {
       rethrow;
     } catch (e, stack) {
@@ -125,8 +123,6 @@ class DailyRepository {
         newCategory: newCategory,
         newDescription: newDescription,
       );
-    } on DuplicateDailyEntryException {
-      rethrow;
     } catch (e, stack) {
       AppLogger.e(_tag, "Failed to update entry (record $recordId, person $personId, ${date.toIso8601String()})", e, stack);
       throw DatabaseOperationException(
