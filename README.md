@@ -74,11 +74,6 @@ Automatically sum up all collected data and present it visually with charts.
 
 ---
 
-### 5. Help Page PDF
-Located in the **Settings**, the Help page provides guidance on how to use the app’s features and explains each category. The guidance is only in German available.
-
----
-
 ## 🗄 Database
 
 - **Type:** SQLite (via [`sqflite`](https://pub.dev/packages/sqflite))
