@@ -58,13 +58,16 @@ void main() {
     expect(File(p.join(dir.path, 'backup', 'db_$year.latest.bak')).existsSync(), isTrue);
   }
 
+  /// The app as it is after a start: nothing is open yet.
+  ProviderContainer startApp() => ProviderContainer(overrides: [
+        storagePermissionServiceProvider.overrideWithValue(FakeStoragePermissionService()),
+        settingsProvider.overrideWith(() => SettingsNotifier(_FakeSettingsService())),
+      ]);
+
   setUp(() {
     dir = Directory.systemTemp.createTempSync('attendly_restore_test_');
     StorageManager.directoryOverride = dir;
-    container = ProviderContainer(overrides: [
-      storagePermissionServiceProvider.overrideWithValue(FakeStoragePermissionService()),
-      settingsProvider.overrideWith(() => SettingsNotifier(_FakeSettingsService())),
-    ]);
+    container = startApp();
   });
 
   tearDown(() async {
@@ -141,6 +144,23 @@ void main() {
     final settings = jsonDecode(settingsFile().readAsStringSync()) as Map<String, dynamic>;
     expect(settings['file_path'], dbFile().path);
     expect(settings['current_year'], '$year');
+  });
+
+  test('a first start creates the database and the next start opens it', () async {
+    expect(await started(), isA<StartupNeedsSetup>().having((s) => s.backups, 'backups', isEmpty));
+    expect(dbFile().existsSync(), isFalse, reason: 'the user must ask for the database');
+
+    await notifier().createDatabase();
+    expect(current(), isA<StartupReady>());
+    await addTestPerson(container.read(appDatabaseProvider), 'Anna');
+
+    // The app is closed and started again.
+    await container.read(databaseProvider.notifier).closeDatabase();
+    container.dispose();
+    container = startApp();
+
+    expect(await started(), isA<StartupReady>());
+    expect(await peopleInOpenDatabase(), ['Anna']);
   });
 
   test('a healthy database with a backup opens without the restore screen', () async {
