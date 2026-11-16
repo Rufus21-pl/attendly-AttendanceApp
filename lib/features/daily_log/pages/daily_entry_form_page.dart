@@ -236,13 +236,6 @@ class _DailyEntryFormPageState extends ConsumerState<DailyEntryFormPage> {
 
       await AppDialogs.showSuccess(context, localizations.recordUpdatedSuccessfully);
       if (mounted) Navigator.of(context).pop(true);
-    } on custom_db_exceptions.DuplicateDailyEntryException {
-      AppLogger.d("Daily", "Not adding twice to the open category");
-      if (!mounted) return;
-      await AppDialogs.showInfo(
-        context,
-        localizations.personAlreadyInCategoryOpen(record.personName ?? localizations.unknown),
-      );
     } on custom_db_exceptions.DatabaseNotReadyException {
       return;
     } on custom_db_exceptions.DatabaseException catch (e) {
