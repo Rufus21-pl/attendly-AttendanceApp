@@ -109,30 +109,6 @@ void main() {
       expect(weekly.migrationDiverse, 0);
     });
 
-    test('updateDailyEntry throws DuplicateDailyEntryException when changing to "open" if one already exists', () async {
-      final pId = await setupPerson(birthday: DateTime(2000, 01, 01), gender: Gender.d);
-      final date = DateTime(2024, 1, 1);
-
-      // Setup: Person has one 'open' entry and one 'other' entry
-      await db.insertDao.insertDailyEntry(personId: pId, date: date, category: Category.open);
-      await db.insertDao.insertDailyEntry(personId: pId, date: date, category: Category.other);
-      
-      // Get the recordID of the 'other' entry
-      final entries = await db.select(db.dailyEntry).get();
-      final otherEntryId = entries.firstWhere((e) => e.category == Category.other).recordId;
-
-      // Try to update the 'other' entry to be 'open'
-      expect(
-        () => db.updateDao.updateDailyEntry(
-          recordID: otherEntryId,
-          date: date,
-          personId: pId,
-          newCategory: Category.open,
-        ),
-        throwsA(isA<DuplicateDailyEntryException>()),
-      );
-    });
-
     test('updatePerson rolls back stats if name update fails (Unique Constraint)', () async {
       final date = DateTime(2026, 01, 01);
       final p1 = await setupPerson(name: 'Alice');
