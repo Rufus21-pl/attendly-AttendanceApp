@@ -94,6 +94,20 @@ void main() {
     expect(kept, hasLength(1), reason: 'the file that was replaced is kept');
   });
 
+  test('an empty database file is restored from its backup', () async {
+    await createDatabaseWithBackup(['Anna', 'Ben']);
+    dbFile().writeAsBytesSync(const []);
+
+    final state = await started();
+    expect(state, isA<StartupRestoreAvailable>().having((s) => s.reason, 'reason', RestoreReason.unreadable));
+    expect(dbFile().lengthSync(), 0, reason: 'no tables are created in the file');
+
+    await notifier().restoreBackup((state as StartupRestoreAvailable).backups.first);
+
+    expect(current(), isA<StartupReady>());
+    expect(await peopleInOpenDatabase(), ['Anna', 'Ben'], reason: 'the backup still has the data');
+  });
+
   test('a deleted database file is restored from its backup', () async {
     await createDatabaseWithBackup(['Anna']);
     dbFile().deleteSync();
