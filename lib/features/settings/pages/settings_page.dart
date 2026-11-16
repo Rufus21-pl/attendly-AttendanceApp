@@ -1,6 +1,5 @@
 import 'package:attendly/core/app_info/app_info.dart';
 import 'package:attendly/shared/dialogs/app_dialogs.dart';
-import 'package:attendly/features/settings/pages/help_page.dart';
 import 'package:attendly/features/settings/widgets/about_dialogs.dart';
 import 'package:attendly/features/settings/providers/settings_notifier.dart';
 import 'package:attendly/features/settings/widgets/changelog_dialog.dart';
@@ -120,16 +119,6 @@ class SettingsPage extends ConsumerWidget  {
                   onTap: () => _showRecalibrationDialog(context, ref),
                 ),
                 const _BackupTile(),
-                _SettingsTile(
-                  title: localizations.help,
-                  subtitle: localizations.openUserManual,
-                  icon: Icons.help_outline,
-                  trailing: Icon(Icons.chevron_right, size: iconSize),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) =>
-                        HelpPage(),
-                  )),
-                ),
               ],
             ),
 
