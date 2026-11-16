@@ -67,17 +67,19 @@ void main() {
       await unmount(tester);
     });
 
-    testWidgets('the multiplier is only offered for countable categories', (tester) async {
+    testWidgets('the multiplier is offered when a category is selected', (tester) async {
       await openPage(tester, const DailyEntryFormPage(
         mode: DailyEntryFormMode.add,
         preselectedPersons: [(id: 1, name: 'Anna')],
       ));
-
-      await chooseCategory(tester, l10n.open);
       expect(find.text(l10n.numberOfEntries), findsNothing);
 
       await chooseCategory(tester, l10n.offers);
       expect(find.text(l10n.numberOfEntries), findsOneWidget);
+
+      // Tapping the selected category again clears it.
+      await chooseCategory(tester, l10n.offers);
+      expect(find.text(l10n.numberOfEntries), findsNothing);
       await unmount(tester);
     });
 
