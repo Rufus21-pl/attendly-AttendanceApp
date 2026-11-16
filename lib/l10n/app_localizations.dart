@@ -304,11 +304,6 @@ abstract class AppLocalizations {
   String get settingsErrorFile;
   String settingsErrorKey(String key);
 
-  String get help;
-  String get openUserManual;
-  String get externalPdfAppHint;
-  String get failedToOpenPdf;
-
   // For migration_dialog.dart
   String get migratingDatabase;
   String get migrationBodyMessage;

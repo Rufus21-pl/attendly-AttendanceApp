@@ -647,19 +647,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String settingsErrorKey(String key) => 'A critical setting ("$key") is missing from the settings file. Please try reinstalling the application.';
 
-  // missing keys for help page
-  @override
-  String get help => 'Help';
-
-  @override
-  String get openUserManual => 'Open User Manual';
-
-  @override
-  String get externalPdfAppHint => 'Opens with an external PDF app (e.g., Google PDF Viewer).';
-
-  @override
-  String get failedToOpenPdf => 'Failed to open PDF.';
-
   @override
   String getAppsVerision(String version) => "Version number $version";
 
