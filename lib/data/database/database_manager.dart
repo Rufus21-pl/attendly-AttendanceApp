@@ -32,6 +32,11 @@ class DatabaseManager implements DatabaseManagerInterface {
   /// Writes the backup of [_db] after changes. Exists while [_db] is open.
   BackupScheduler? _backupScheduler;
 
+  bool _isDamaged = false;
+
+  @override
+  bool get isOpenDatabaseDamaged => _isDamaged;
+
   @override
   String? get currentDbPath => _currentDbFile?.path;
 
@@ -107,17 +112,23 @@ class DatabaseManager implements DatabaseManagerInterface {
 
     if (!await targetFile.exists()) {
       AppLogger.e(_tag, "Cannot open ${targetFile.path}: file does not exist");
-      throw FileSystemException(
-        "Database file does not exist. It must be created explicitly.",
-        targetFile.path,
-      );
+      throw DatabaseFileMissingException(targetFile.path);
     }
 
-    AppLogger.i(_tag, "Opening ${targetFile.path} (${await targetFile.length()} bytes"
+    final sizeBytes = await targetFile.length();
+    AppLogger.i(_tag, "Opening ${targetFile.path} ($sizeBytes bytes"
         "${file != null ? ', selected by user' : ''})");
 
     await closeDatabase();
     _currentDbFile = targetFile;
+
+    // SQLite takes an empty file for a new database and creates the tables
+    // in it. The empty database would then replace the backup with the data.
+    if (sizeBytes == 0) {
+      AppLogger.e(_tag, "Cannot open ${targetFile.path}: the file is empty");
+      throw DatabaseCorruptedException(targetFile.path);
+    }
+
     _db = AppDatabase(AppDatabase.openConnection(targetFile), onMigrationStarted: onMigrationStarted);
 
     final stopwatch = Stopwatch()..start();
@@ -133,6 +144,12 @@ class DatabaseManager implements DatabaseManagerInterface {
     }
 
     AppLogger.i(_tag, "Opened ${p.basename(targetFile.path)} in ${stopwatch.elapsedMilliseconds} ms");
+
+    // The first query can pass on a file that is damaged further inside.
+    _isDamaged = !await _backupService.isHealthy(_db!);
+    if (_isDamaged) {
+      AppLogger.e(_tag, "${p.basename(targetFile.path)} opened, but the check found damage");
+    }
     await _startBackups();
   }
 
@@ -206,6 +223,7 @@ class DatabaseManager implements DatabaseManagerInterface {
       // A change of the last seconds must be in the backup before the file closes.
       await _backupScheduler?.close();
       _backupScheduler = null;
+      _isDamaged = false;
       try {
         await _db!.close();
       } catch (e, stackTrace) {
@@ -235,6 +253,14 @@ class DatabaseManager implements DatabaseManagerInterface {
   @override
   Future<void> flushBackup() async {
     await _backupScheduler?.flush();
+  }
+
+  @override
+  Future<void> backupNow() async {
+    final scheduler = _backupScheduler;
+    if (scheduler == null) return;
+    scheduler.requestBackup();
+    await scheduler.flush();
   }
 
   @override

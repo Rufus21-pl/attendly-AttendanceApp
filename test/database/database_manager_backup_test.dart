@@ -168,6 +168,54 @@ void main() {
     });
   });
 
+  group('an empty file', () {
+    test('fails with DatabaseCorruptedException and stays empty', () async {
+      dbFile(currentYear).writeAsBytesSync(const []);
+
+      await expectLater(
+        manager.openDatabase(),
+        throwsA(isA<DatabaseCorruptedException>()
+            .having((e) => e.path, 'path', dbFile(currentYear).path)),
+      );
+
+      expect(() => manager.databaseConnection, throwsA(isA<DatabaseFailedInit>()));
+      expect(dbFile(currentYear).lengthSync(), 0, reason: 'no tables are created in the file');
+      expect(Directory(p.join(dir.path, 'backup')).existsSync(), isFalse);
+    });
+
+    test('does not replace the backup of the database it was', () async {
+      await createDatabaseFile(dbFile(currentYear), people: ['Anna']);
+      await manager.openDatabase();
+      await manager.closeDatabase();
+      dbFile(currentYear).writeAsBytesSync(const []);
+
+      await expectLater(manager.openDatabase(), throwsA(isA<DatabaseCorruptedException>()));
+
+      expect(await peopleIn(latestBackup(currentYear)), ['Anna']);
+    });
+
+    test('selected from the list fails in the same way', () async {
+      await createDatabaseFile(dbFile(currentYear), people: ['Anna']);
+      dbFile(oldYear).writeAsBytesSync(const []);
+
+      await expectLater(
+        manager.openDatabase(file: dbFile(oldYear)),
+        throwsA(isA<DatabaseCorruptedException>()),
+      );
+
+      expect(dbFile(oldYear).lengthSync(), 0);
+    });
+
+    test('becomes the new database when the user creates one', () async {
+      dbFile(currentYear).writeAsBytesSync(const []);
+
+      await manager.createDatabase();
+
+      expect(manager.currentDbPath, dbFile(currentYear).path);
+      expect(await manager.databaseConnection.readDao.watchAllPerson(true).first, isEmpty);
+    });
+  });
+
   group('restoreBackup', () {
     Future<BackupInfo> backupOf(int year) async {
       final backups = await manager.listBackups();

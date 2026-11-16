@@ -97,6 +97,17 @@ The app keeps backup copies of each database in `Documents/AttendlyDb/backup/`.
 - **Size:** two files per database, each about as large as the database. No manual cleanup is needed.
 - **Limits:** the copies are on the same device. They protect against a damaged or deleted database file, not against a lost or broken device. For that, copy the `AttendlyDb` folder to another device from time to time.
 - **Uninstall:** the backup files stay on the device, like the databases.
+- **In the app:** *Settings → Data → Database backup* shows the time of the last backup. A tap writes a backup now.
+
+### Restore
+
+The app offers a restore by itself when it starts:
+
+- **The database cannot be opened, is empty (0 bytes) or is missing:** the restore screen lists the backups of that database. Select one and tap *Restore backup*.
+- **The database opens, but a check finds damage:** the same screen appears, with *Continue with this database* as a second option.
+- **First start with no database, but with backups** (for example after a new installation): the start screen has the button *Restore from backup*.
+
+A restore copies the backup to `Documents/AttendlyDb/db_<year>.db` and makes it the main database again. The file that it replaces is not deleted: it moves to the backup folder as `db_<year>.damaged-<date>-<time>.bak`. Changes made after the time of the backup are lost.
 
 ---
 

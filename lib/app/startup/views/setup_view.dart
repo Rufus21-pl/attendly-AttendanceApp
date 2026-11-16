@@ -11,7 +11,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class SetupView extends ConsumerWidget {
   final bool isBusy;
 
-  const SetupView({super.key, this.isBusy = false});
+  /// True when backups of an earlier installation were found.
+  final bool hasBackups;
+
+  const SetupView({super.key, this.isBusy = false, this.hasBackups = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,6 +41,12 @@ class SetupView extends ConsumerWidget {
             }
           },
         ),
+        if (hasBackups)
+          TextButton.icon(
+            onPressed: isBusy ? null : ref.read(appStartupProvider.notifier).showRestoreOptions,
+            icon: Icon(Icons.settings_backup_restore, size: isTablet ? 24 : 20),
+            label: Text(localizations.restoreFromBackup, style: TextStyle(fontSize: isTablet ? 18 : 16)),
+          ),
       ],
     );
   }

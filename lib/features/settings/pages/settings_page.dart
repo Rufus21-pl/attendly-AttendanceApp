@@ -11,6 +11,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:attendly/l10n/app_localizations.dart';
 import 'package:attendly/features/settings/pages/debug_menu_page.dart';
 import 'package:attendly/core/responsive/responsive.dart';
+import 'package:attendly/core/utils/date_utils.dart';
 
 class SettingsPage extends ConsumerWidget  {
   const SettingsPage({super.key});
@@ -118,6 +119,7 @@ class SettingsPage extends ConsumerWidget  {
                   trailing: Icon(Icons.chevron_right, size: iconSize),
                   onTap: () => _showRecalibrationDialog(context, ref),
                 ),
+                const _BackupTile(),
                 _SettingsTile(
                   title: localizations.help,
                   subtitle: localizations.openUserManual,
@@ -423,6 +425,52 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
+
+/// The time of the last backup of the open database. A tap writes a backup now.
+class _BackupTile extends ConsumerWidget {
+  const _BackupTile();
+
+  /// File times can have a resolution of one second or two.
+  static const Duration _timeTolerance = Duration(seconds: 2);
+
+  Future<void> _backUpNow(BuildContext context, WidgetRef ref) async {
+    final localizations = AppLocalizations.of(context);
+    if (!ref.read(databaseProvider).isReady) {
+      AppDialogs.showError(context, localizations.databaseNotConnected);
+      return;
+    }
+
+    final startedAt = DateTime.now();
+    await ref.read(databaseProvider.notifier).backupNow();
+    ref.invalidate(lastBackupProvider);
+    final latest = await ref.read(lastBackupProvider.future);
+    if (!context.mounted) return;
+
+    // A damaged database gets no backup: only a new file counts as written.
+    final written = latest != null && latest.modified.isAfter(startedAt.subtract(_timeTolerance));
+    AppDialogs.showSnack(
+      context,
+      written ? localizations.backupWritten : localizations.backupFailed,
+      icon: written ? Icons.cloud_done_outlined : Icons.error_outline,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localizations = AppLocalizations.of(context);
+    final latest = ref.watch(lastBackupProvider).value;
+
+    return _SettingsTile(
+      title: localizations.databaseBackup,
+      subtitle: latest == null
+          ? localizations.noBackupYet
+          : localizations.lastBackupAt(dateTimeToDisplayString(latest.modified)),
+      icon: Icons.backup_outlined,
+      trailing: Icon(Icons.chevron_right, size: Responsive.of(context).iconSize()),
+      onTap: () => _backUpNow(context, ref),
+    );
+  }
+}
 
 /// The schema version of the open database, below the app version.
 class _SchemaVersionText extends ConsumerWidget {

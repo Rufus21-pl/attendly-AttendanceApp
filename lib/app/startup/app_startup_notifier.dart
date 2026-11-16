@@ -4,8 +4,10 @@ import 'package:attendly/app/startup/startup_decision.dart';
 import 'package:attendly/app/startup/startup_state.dart';
 import 'package:attendly/core/logging/app_logger.dart';
 import 'package:attendly/core/permissions/storage_permission_service.dart';
+import 'package:attendly/data/backup/backup_info.dart';
 import 'package:attendly/data/database/database_provider.dart';
 import 'package:attendly/data/database/database_state.dart';
+import 'package:attendly/data/database/exceptions.dart';
 import 'package:attendly/features/settings/providers/settings_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -164,6 +166,39 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
     });
   });
 
+  // ── Backup ────────────────────────────────────────────────────────────────
+
+  /// From the setup screen: shows the backups found in the storage folder.
+  void showRestoreOptions() {
+    final current = state.value;
+    if (current is! StartupNeedsSetup || current.backups.isEmpty) return;
+    state = AsyncData(StartupRestoreAvailable(RestoreReason.noDatabase, current.backups));
+  }
+
+  /// Replaces the main database with [backup] and opens it with the normal
+  /// startup checks. On failure the checks run again, so the screen matches
+  /// the files, and the error is rethrown so the view can show it.
+  Future<void> restoreBackup(BackupInfo backup) => _serialized(() async {
+    AppLogger.i(_tag, 'User restores ${backup.dbFileName} from its backup');
+    state = const AsyncLoading<StartupState>();
+    try {
+      await _database.restoreBackup(backup);
+    } catch (e, stackTrace) {
+      AppLogger.e(_tag, 'Restoring ${backup.dbFileName} failed', e, stackTrace);
+      state = AsyncData(await _openDefault());
+      rethrow;
+    }
+    state = AsyncData(await _openDefault());
+  });
+
+  /// The database is open but damaged, and the user does not want a backup.
+  Future<void> continueWithDamagedDatabase() => _serialized(() async {
+    final current = state.value;
+    if (current is! StartupRestoreAvailable || current.reason != RestoreReason.damaged) return;
+    AppLogger.w(_tag, 'User continues with the damaged database');
+    state = AsyncData(await _ready());
+  });
+
   // ── Internals ─────────────────────────────────────────────────────────────
 
   Future<StartupState> _start() async {
@@ -186,18 +221,52 @@ class AppStartupNotifier extends AsyncNotifier<StartupState> {
       switch (await decideStartup(_database)) {
         case StartupDecision.needsSetup:
           AppLogger.i(_tag, 'Startup: no database yet, showing setup screen');
-          return const StartupNeedsSetup();
+          return StartupNeedsSetup(backups: await _backupsOrEmpty(_database.listBackups));
         case StartupDecision.askForRollover:
           return const StartupRolloverAvailable();
         case StartupDecision.openDefaultDatabase:
           AppLogger.i(_tag, 'Startup: opening default database');
           await _database.openDatabase(onMigrationStarted: _onMigrationStarted);
+          if (_database.isOpenDatabaseDamaged) {
+            final backups = await _backupsOrEmpty(_database.listBackupsOfCurrentDatabase);
+            if (backups.isNotEmpty) {
+              AppLogger.w(_tag, 'Startup: the database is damaged, offering its backups');
+              _migrationStartedAt = null;
+              return StartupRestoreAvailable(RestoreReason.damaged, backups);
+            }
+          }
           return await _ready();
       }
     } catch (e, stackTrace) {
       AppLogger.e(_tag, 'Startup failed, showing error screen', e, stackTrace);
       _migrationStartedAt = null;
-      return StartupFailed(e);
+      return await _restoreOptionsFor(e) ?? StartupFailed(e);
+    }
+  }
+
+  /// The restore screen for a main database that is missing or cannot be
+  /// read, or null when the error is something else or no backup exists.
+  Future<StartupState?> _restoreOptionsFor(Object error) async {
+    final reason = switch (error) {
+      DatabaseCorruptedException() => RestoreReason.unreadable,
+      DatabaseFileMissingException() => RestoreReason.missing,
+      _ => null,
+    };
+    if (reason == null) return null;
+
+    final backups = await _backupsOrEmpty(_database.listBackupsOfCurrentDatabase);
+    if (backups.isEmpty) return null;
+    AppLogger.w(_tag, 'Startup: the database is ${reason.name}, offering its backups');
+    return StartupRestoreAvailable(reason, backups, error: error);
+  }
+
+  /// A failure to list the backups must not stop the startup.
+  Future<List<BackupInfo>> _backupsOrEmpty(Future<List<BackupInfo>> Function() list) async {
+    try {
+      return await list();
+    } catch (e, stackTrace) {
+      AppLogger.e(_tag, 'Listing the backups failed', e, stackTrace);
+      return const [];
     }
   }
 

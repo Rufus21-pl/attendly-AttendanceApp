@@ -786,4 +786,74 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get linkCopiedToClipboard => 'Link copied to clipboard';
+  // Backup: restore screen and settings
+  @override
+  String get restoreTitleUnreadable => 'Database cannot be opened';
+
+  @override
+  String get restoreMessageUnreadable =>
+      'The database file is damaged. You can restore it from a backup. The damaged file is kept in the backup folder.';
+
+  @override
+  String get restoreTitleDamaged => 'Database is damaged';
+
+  @override
+  String get restoreMessageDamaged =>
+      'A check found damage in the database. You can restore a backup or continue with this database. '
+      'No new backups are written while the database is damaged.';
+
+  @override
+  String get restoreTitleMissing => 'Database not found';
+
+  @override
+  String get restoreMessageMissing =>
+      'The database file is missing, but a backup exists. You can restore the backup or create a new database.';
+
+  @override
+  String get restoreTitleNoDatabase => 'Restore from backup';
+
+  @override
+  String get restoreMessageNoDatabase =>
+      'No database exists, but backups were found. Select a backup to use it as your database again.';
+
+  @override
+  String get restoreBackup => 'Restore backup';
+
+  @override
+  String get restoreFromBackup => 'Restore from backup';
+
+  @override
+  String get continueWithDatabase => 'Continue with this database';
+
+  @override
+  String get backupLatest => 'Latest backup';
+
+  @override
+  String get backupPreviousDay => 'Backup of the previous day';
+
+  @override
+  String get confirmRestoreTitle => 'Restore this backup?';
+
+  @override
+  String confirmRestoreMessage(String date) =>
+      'The database gets the state of $date. Changes made after that time are lost. '
+      'The database file that is replaced is kept in the backup folder.';
+
+  @override
+  String get restoreFailed => 'The backup could not be restored';
+
+  @override
+  String get databaseBackup => 'Database backup';
+
+  @override
+  String lastBackupAt(String date) => 'Last backup: $date. Tap to back up now.';
+
+  @override
+  String get noBackupYet => 'No backup yet. Tap to back up now.';
+
+  @override
+  String get backupWritten => 'Backup written';
+
+  @override
+  String get backupFailed => 'The backup could not be written';
 }

@@ -65,3 +65,8 @@ int calcAge(DateTime today, DateTime born) {
   }
   return ageYears;
 }
+
+/// Date and time for display, e.g. "15.11.2026 23:56".
+String dateTimeToDisplayString(DateTime time) {
+  return DateFormat('dd.MM.yyyy HH:mm').format(time);
+}

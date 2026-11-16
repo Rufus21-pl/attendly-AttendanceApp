@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:attendly/data/backup/backup_info.dart';
+
 /// What the startup gate shows. Loading is the notifier's AsyncLoading.
 sealed class StartupState {
   const StartupState();
@@ -12,9 +14,35 @@ final class StartupNeedsPermission extends StartupState {
   const StartupNeedsPermission({this.permanentlyDenied = false});
 }
 
-/// Fresh install: no database file exists yet.
+/// Fresh install: no database file exists yet. [backups] is not empty when
+/// backups of an earlier installation are in the storage folder.
 final class StartupNeedsSetup extends StartupState {
-  const StartupNeedsSetup();
+  final List<BackupInfo> backups;
+  const StartupNeedsSetup({this.backups = const []});
+}
+
+/// Why the restore screen is shown.
+enum RestoreReason {
+  /// First start: no database exists, but backups do.
+  noDatabase,
+
+  /// The main database file is gone.
+  missing,
+
+  /// The main database file cannot be read as a database.
+  unreadable,
+
+  /// The main database is open, but the check found damage in it.
+  damaged,
+}
+
+/// The main database has a problem and a backup can replace it.
+/// [backups] is never empty. [error] is set when opening failed.
+final class StartupRestoreAvailable extends StartupState {
+  final RestoreReason reason;
+  final List<BackupInfo> backups;
+  final Object? error;
+  const StartupRestoreAvailable(this.reason, this.backups, {this.error});
 }
 
 /// The year changed: ask whether to create the new year's database.
