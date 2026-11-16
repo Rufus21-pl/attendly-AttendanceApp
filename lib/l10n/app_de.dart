@@ -451,8 +451,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String personsFailedToAdd(int failCount, int successCount) => '$failCount Person(en) konnten nicht hinzugefügt werden. $successCount erfolgreich.';
   @override
   String personsAddedSuccessfully(int successCount) => '$successCount Person(en) erfolgreich zur Tagesliste hinzugefügt!';
-  @override
-  String personAlreadyInCategoryOpen(String name) => '$name ist für diesen Tag bereits in der Kategorie "Offener Bereich" und kann nicht erneut hinzugefügt werden.';
 
   // For year_stats_page.dart
   @override

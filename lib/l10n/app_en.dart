@@ -475,8 +475,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String personsAddedSuccessfully(int successCount) => '$successCount person(s) added to daily table successfully!';
   @override
-  String personAlreadyInCategoryOpen(String name) => '$name is already in the "Open" category for this day and cannot be added again.';
-  @override
   String get numberOfEntries => 'Number of Entries';
 
   // For year_stats_page.dart
